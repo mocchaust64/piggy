@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase gen types typescript*)",
+      "Bash(supabase start)",
+      "Bash(supabase stop)",
+      "Bash(supabase db reset)",
+      "Bash(supabase migration new*)",
+      "Bash(npx expo*)",
+      "Bash(npx eas*)",
+      "Bash(npm install*)",
+      "Bash(npm run*)",
+      "Bash(yarn*)",
+      "Bash(jest*)",
+      "Bash(npx jest*)",
+      "Bash(maestro*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add src/*)",
+      "Bash(git add app/*)",
+      "Bash(git add supabase/*)",
+      "Bash(cat*)",
+      "Bash(ls*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf*)",
+      "Bash(supabase db push --db-url*)"
+    ]
+  }
+}

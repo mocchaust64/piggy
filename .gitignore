@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.expo/
+.prebuild/
+
+# Build artifacts
+dist/
+build/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment variables (SECURITY - DO NOT REMOVE)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+.env.test
+
+# IDEs
+.idea/
+.vscode/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+supabase/functions/.temp/
+supabase/functions/.debug/
