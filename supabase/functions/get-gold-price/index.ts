@@ -15,7 +15,7 @@ import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { errorResponse, withErrorHandler } from '../_shared/errors.ts'
 import { getGoldPrice, TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
 
-const CACHE_TTL_MS = 10 * 60 * 1000  // 10 minutes
+const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 const CACHE_KEY = 'gold_price_current'
 
 const handler = async (req: Request): Promise<Response> => {
@@ -53,18 +53,18 @@ const handler = async (req: Request): Promise<Response> => {
   const pricePerGram = pricePerTroyOz / TROY_OUNCE_TO_GRAMS
 
   const responseData = {
-    pricePerGram:    parseFloat(pricePerGram.toFixed(4)),
+    pricePerGram: parseFloat(pricePerGram.toFixed(4)),
     pricePerTroyOz: pricePerTroyOz,
-    currency:        grailPrice.currency,
-    unit:            'gram',
-    fetchedAt:       grailPrice.timestamp,
+    currency: grailPrice.currency,
+    unit: 'gram',
+    fetchedAt: grailPrice.timestamp,
   }
 
   // 3. Upsert cache (fire and forget — don't block the response)
   adminClient
     .from('price_cache')
     .upsert({ id: CACHE_KEY, data: responseData, cached_at: new Date().toISOString() })
-    .then(({ error }) => {
+    .then(({ error }: { error: { message: string } | null }) => {
       if (error) console.error('[get-gold-price] Cache upsert failed:', error.message)
     })
 

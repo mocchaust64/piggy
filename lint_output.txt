@@ -1,0 +1,57 @@
+
+> heodat@1.0.0 lint
+> eslint .
+
+
+/Users/tai/Documents/mmo/heodat/app/(auth)/login.tsx
+  16:22  warning  Inline style: { fontSize: 72 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/(tabs)/_layout.tsx
+  7:23  warning  Inline style: { fontSize: 'focused ? 26 : 22', opacity: 'focused ? 1 : 0.5' }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/(tabs)/index.tsx
+  38:16  warning  Inline style: {
+  shadowColor: '#D4001A',
+  shadowOpacity: 0.35,
+  shadowRadius: 12,
+  elevation: 8
+}  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/(tabs)/profile.tsx
+   1:10  error    'useTranslation' is defined but never used  @typescript-eslint/no-unused-vars
+  11:1   error    Delete `⏎`                                  prettier/prettier
+  27:22  warning  Inline style: { fontSize: 64 }              react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/(tabs)/transactions.tsx
+  18:22  warning  Inline style: { fontSize: 48 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/gift/[code].tsx
+  21:22  warning  Inline style: { fontSize: 80 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/gift/create.tsx
+  27:30  warning  Inline style: { fontSize: 28 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/onboarding.tsx
+  50:22  warning  Inline style: { fontSize: 88 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/piggy/[id].tsx
+  29:26  warning  Inline style: { fontSize: 48 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/app/piggy/create.tsx
+  22:26  warning  Inline style: { fontSize: 48 }  react-native/no-inline-styles
+
+/Users/tai/Documents/mmo/heodat/src/components/ui/Button.tsx
+  60:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/immutability')
+  65:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/immutability')
+
+/Users/tai/Documents/mmo/heodat/src/components/ui/Skeleton.tsx
+  69:14  warning  Inline style: {
+  shadowColor: '#000',
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  elevation: 2
+}  react-native/no-inline-styles
+
+✖ 15 problems (2 errors, 13 warnings)
+  1 error and 2 warnings potentially fixable with the `--fix` option.
+

@@ -33,11 +33,11 @@ export function useSession(): UseSessionReturn {
     })
 
     // 2. Subscribe to future auth changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, updatedSession) => {
-        setSession(updatedSession)
-      },
-    )
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, updatedSession) => {
+      setSession(updatedSession)
+    })
 
     return () => subscription.unsubscribe()
   }, [])

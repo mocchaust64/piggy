@@ -12,51 +12,51 @@ import { supabase } from '@/lib/supabaseClient'
 // ─── Response types ───────────────────────────────────────────────────────────
 
 export interface GoldPriceData {
-  pricePerGram:    number
-  pricePerTroyOz:  number
-  currency:        string
-  unit:            string
-  fetchedAt:       string
+  pricePerGram: number
+  pricePerTroyOz: number
+  currency: string
+  unit: string
+  fetchedAt: string
 }
 
 export interface GoldPriceResponse {
-  success:   boolean
-  data:      GoldPriceData
+  success: boolean
+  data: GoldPriceData
   fromCache: boolean
 }
 
 export interface BalanceData {
-  usdcBalance:          number
+  usdcBalance: number
   goldBalanceTotalGrams: number
-  grailUserId:          string
+  grailUserId: string
 }
 
 export interface BalanceResponse {
   success: boolean
-  data:    BalanceData
+  data: BalanceData
 }
 
 export interface BuyGoldData {
-  transactionId:  string
-  grailTxId:      string
+  transactionId: string
+  grailTxId: string
   goldAmountGrams: number
-  piggyId:        string
+  piggyId: string
 }
 
 export interface BuyGoldResponse {
   success: boolean
-  data:    BuyGoldData
+  data: BuyGoldData
 }
 
 export interface ClaimGiftData {
-  giftId:          string
+  giftId: string
   goldAmountGrams: number
-  templateType:    string | null
+  templateType: string | null
 }
 
 export interface ClaimGiftResponse {
   success: boolean
-  data:    ClaimGiftData
+  data: ClaimGiftData
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -144,10 +144,7 @@ export async function buyGold(
  * @param claimCode  - The gift claim code (format: 'heo-xxxxxxxxxx')
  * @param toPiggyId  - The piggy bank to receive the gold
  */
-export async function claimGift(
-  claimCode: string,
-  toPiggyId: string,
-): Promise<ClaimGiftData> {
+export async function claimGift(claimCode: string, toPiggyId: string): Promise<ClaimGiftData> {
   const res = await invoke<ClaimGiftResponse>('claim-gift', {
     body: { claimCode, toPiggyId },
   })

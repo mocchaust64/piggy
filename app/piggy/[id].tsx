@@ -18,7 +18,7 @@ export default function PiggyDetailScreen() {
       {/* Header */}
       <View className="flex-row items-center gap-3 px-6 py-4">
         <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')}>
-          <Text className="text-brand-red text-base">← {t('common.back')}</Text>
+          <Text className="text-base text-brand-red">← {t('common.back')}</Text>
         </Pressable>
       </View>
 
@@ -33,7 +33,7 @@ export default function PiggyDetailScreen() {
         </View>
 
         {/* Balance card */}
-        <Card className="p-5 gap-1 items-center">
+        <Card className="items-center gap-1 p-5">
           <Text className="text-sm text-gray-400">{t('piggy.balance')}</Text>
           <Text className="text-4xl font-bold text-brand-gold">0.00</Text>
           <Text className="text-base text-gray-400">{t('piggy.goldUnit')}</Text>
@@ -42,7 +42,11 @@ export default function PiggyDetailScreen() {
         {/* Actions */}
         <View className="gap-3">
           <Button label={t('wallet.buyGold')} onPress={() => {}} />
-          <Button label={t('gift.createTitle')} onPress={() => router.push('/gift/create')} variant="secondary" />
+          <Button
+            label={t('gift.createTitle')}
+            onPress={() => router.push('/gift/create')}
+            variant="secondary"
+          />
         </View>
       </View>
     </SafeAreaView>

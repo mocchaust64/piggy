@@ -4,11 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 /** Tab icon using emoji — replace with SVG icons in Sprint 6 */
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return (
-    <Text style={{ fontSize: focused ? 26 : 22, opacity: focused ? 1 : 0.5 }}>
-      {emoji}
-    </Text>
-  )
+  return <Text style={{ fontSize: focused ? 26 : 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
 }
 
 /**

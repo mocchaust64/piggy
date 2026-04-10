@@ -35,7 +35,13 @@ export default function HomeScreen() {
       <Pressable
         onPress={() => router.push('/piggy/create')}
         className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-brand-red"
-        style={{ shadowColor: '#D4001A', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8 }}
+        style={{
+          shadowColor: '#D4001A',
+          shadowOpacity: 0.35,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 8,
+        }}
         accessibilityLabel={t('piggy.addPiggy')}
         accessibilityRole="button"
       >

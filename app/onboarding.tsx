@@ -4,14 +4,14 @@ import { Pressable, SafeAreaView, Text, View } from 'react-native'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
 
+import { useState } from 'react'
+
 const STEPS = [
   { emoji: '🐷', titleKey: 'onboarding.step1Title', bodyKey: 'onboarding.step1Body' },
   { emoji: '💵', titleKey: 'onboarding.step2Title', bodyKey: 'onboarding.step2Body' },
   { emoji: '📲', titleKey: 'onboarding.step3Title', bodyKey: 'onboarding.step3Body' },
   { emoji: '🥇', titleKey: 'onboarding.step4Title', bodyKey: 'onboarding.step4Body' },
 ] as const
-
-import { useState } from 'react'
 
 /**
  * Onboarding flow — shown once after first login.
@@ -26,12 +26,11 @@ export default function OnboardingScreen() {
   const isLast = step === STEPS.length - 1
 
   async function handleFinish() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (user) {
-      await supabase
-        .from('user_profiles')
-        .update({ onboarding_completed: true })
-        .eq('id', user.id)
+      await supabase.from('user_profiles').update({ onboarding_completed: true }).eq('id', user.id)
     }
     router.replace('/(tabs)')
   }

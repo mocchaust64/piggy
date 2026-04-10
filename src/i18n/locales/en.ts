@@ -23,7 +23,7 @@ const en = {
     step3Title: 'Step 1: Get USDC',
     step3Body: 'Buy USDC on Binance, Bybit or Remitano and transfer to your in-app wallet',
     step4Title: 'Step 2: Buy gold for your piggy',
-    step4Body: 'Use USDC to buy GOLD for your piggy bank — it\'s that simple!',
+    step4Body: "Use USDC to buy GOLD for your piggy bank — it's that simple!",
     getStarted: 'Get Started',
     skip: 'Skip',
     next: 'Next',
@@ -31,7 +31,7 @@ const en = {
 
   piggy: {
     createTitle: 'Create a Piggy Bank',
-    namePlaceholder: 'Child\'s name (e.g. Baby An)',
+    namePlaceholder: "Child's name (e.g. Baby An)",
     targetPlaceholder: 'Savings goal (e.g. Buy a bicycle)',
     targetAmountPlaceholder: 'Target gold amount (grams)',
     createButton: 'Create Piggy Bank',
@@ -75,11 +75,12 @@ const en = {
     cuoihoi: {
       name: 'Wedding',
       description: 'Wedding gift',
-      defaultMessage: 'Congratulations on your wedding! Wishing your family a lifetime of happiness 💍',
+      defaultMessage:
+        'Congratulations on your wedding! Wishing your family a lifetime of happiness 💍',
     },
     thoinhoi: {
       name: 'First Birthday',
-      description: 'Baby\'s first birthday',
+      description: "Baby's first birthday",
       defaultMessage: 'Happy first birthday! Wishing the little one health and happiness 🍼',
     },
   },

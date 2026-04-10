@@ -7,12 +7,12 @@ module.exports = {
       colors: {
         // Brand colors — Vàng Heo Đất
         brand: {
-          red: '#D4001A',       // Đỏ tết — màu chính
-          gold: '#FFD700',      // Vàng
+          red: '#D4001A', // Đỏ tết — màu chính
+          gold: '#FFD700', // Vàng
           'gold-dark': '#B8960C',
         },
         piggy: {
-          pink: '#FFB3C6',      // Màu heo đất
+          pink: '#FFB3C6', // Màu heo đất
           'pink-dark': '#FF85A1',
         },
       },

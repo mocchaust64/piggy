@@ -9,8 +9,11 @@ export const SUPPORTED_LANGUAGES = ['en', 'vi'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 const deviceLocale = Localization.getLocales()[0]?.languageCode ?? 'vi'
-const defaultLanguage: SupportedLanguage =
-  SUPPORTED_LANGUAGES.includes(deviceLocale as SupportedLanguage) ? (deviceLocale as SupportedLanguage) : 'vi'
+const defaultLanguage: SupportedLanguage = SUPPORTED_LANGUAGES.includes(
+  deviceLocale as SupportedLanguage,
+)
+  ? (deviceLocale as SupportedLanguage)
+  : 'vi'
 
 i18n.use(initReactI18next).init({
   compatibilityJSON: 'v4',

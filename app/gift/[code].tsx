@@ -20,7 +20,7 @@ export default function ClaimGiftScreen() {
         {/* Gift visual */}
         <Text style={{ fontSize: 80 }}>🎁</Text>
 
-        <Card className="w-full p-6 gap-3 items-center">
+        <Card className="w-full items-center gap-3 p-6">
           <Text className="text-xl font-bold text-gray-900">{t('gift.claimTitle')}</Text>
 
           {/* Amount placeholder */}
@@ -30,7 +30,7 @@ export default function ClaimGiftScreen() {
           </View>
 
           {/* Message placeholder */}
-          <Text className="text-center text-base text-gray-600 italic">
+          <Text className="text-center text-base italic text-gray-600">
             "Loading gift message..."
           </Text>
 

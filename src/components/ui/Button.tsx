@@ -1,9 +1,5 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -26,17 +22,17 @@ interface ButtonProps {
 }
 
 const VARIANT_CONTAINER: Record<ButtonVariant, string> = {
-  primary:   'bg-brand-red',
+  primary: 'bg-brand-red',
   secondary: 'bg-piggy-pink',
-  ghost:     'border border-brand-red',
-  danger:    'bg-red-600',
+  ghost: 'border border-brand-red',
+  danger: 'bg-red-600',
 }
 
 const VARIANT_LABEL: Record<ButtonVariant, string> = {
-  primary:   'text-white',
+  primary: 'text-white',
   secondary: 'text-brand-red',
-  ghost:     'text-brand-red',
-  danger:    'text-white',
+  ghost: 'text-brand-red',
+  danger: 'text-white',
 }
 
 /**
@@ -80,12 +76,7 @@ export function Button({
       accessible
       accessibilityRole="button"
       accessibilityState={{ disabled: !isInteractive }}
-      className={`
-        h-14 flex-row items-center justify-center rounded-2xl px-6
-        ${VARIANT_CONTAINER[variant]}
-        ${opacity}
-        ${className}
-      `}
+      className={`h-14 flex-row items-center justify-center rounded-2xl px-6 ${VARIANT_CONTAINER[variant]} ${opacity} ${className} `}
     >
       {loading ? (
         <ActivityIndicator
@@ -93,9 +84,7 @@ export function Button({
           color={variant === 'ghost' || variant === 'secondary' ? '#D4001A' : '#FFFFFF'}
         />
       ) : (
-        <Text className={`text-base font-semibold ${VARIANT_LABEL[variant]}`}>
-          {label}
-        </Text>
+        <Text className={`text-base font-semibold ${VARIANT_LABEL[variant]}`}>{label}</Text>
       )}
     </AnimatedPressable>
   )

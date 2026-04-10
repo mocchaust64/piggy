@@ -24,8 +24,7 @@ export const analytics = {
     track('onboarding_completed', { auth_method: authMethod }),
 
   // Piggy bank
-  piggyCreated: (hasTarget: boolean) =>
-    track('piggy_created', { has_target: hasTarget }),
+  piggyCreated: (hasTarget: boolean) => track('piggy_created', { has_target: hasTarget }),
 
   // Gold purchase
   goldPurchased: (params: { usdcAmount: number; goldGrams: number; piggyId: string }) =>
@@ -39,8 +38,7 @@ export const analytics = {
   giftCreated: (templateType: GiftTemplateKey, goldAmount: number) =>
     track('gift_created', { template_type: templateType, gold_amount: goldAmount }),
 
-  giftShared: (shareMethod: ShareMethod) =>
-    track('gift_shared', { share_method: shareMethod }),
+  giftShared: (shareMethod: ShareMethod) => track('gift_shared', { share_method: shareMethod }),
 
   giftClaimed: (params: {
     templateType: GiftTemplateKey
@@ -61,6 +59,5 @@ export const analytics = {
     track('gift_template_selected', { template: templateKey }),
 
   // USDC wallet
-  usdcDepositViewed: () =>
-    track('usdc_deposit_viewed'),
+  usdcDepositViewed: () => track('usdc_deposit_viewed'),
 }

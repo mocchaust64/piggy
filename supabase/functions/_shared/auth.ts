@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { errorResponse } from './errors.ts'
 
 /**
@@ -12,11 +13,13 @@ import { errorResponse } from './errors.ts'
  * const { user, adminClient } = authResult
  * ```
  */
+export type AdminClient = SupabaseClient
+
 export async function requireAuth(req: Request): Promise<
   | Response
   | {
       userId: string
-      adminClient: ReturnType<typeof createClient>
+      adminClient: AdminClient
     }
 > {
   const authHeader = req.headers.get('Authorization')
@@ -33,7 +36,10 @@ export async function requireAuth(req: Request): Promise<
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  const { data: { user }, error } = await adminClient.auth.getUser(jwt)
+  const {
+    data: { user },
+    error,
+  } = await adminClient.auth.getUser(jwt)
 
   if (error || !user) {
     return errorResponse('UNAUTHORIZED', 'Invalid or expired token')

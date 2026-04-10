@@ -31,10 +31,7 @@ export default function CreatePiggyScreen() {
             placeholder={t('piggy.namePlaceholder')}
             autoCapitalize="words"
           />
-          <Input
-            label="Savings Goal (optional)"
-            placeholder={t('piggy.targetPlaceholder')}
-          />
+          <Input label="Savings Goal (optional)" placeholder={t('piggy.targetPlaceholder')} />
           <Input
             label="Target Amount (grams, optional)"
             placeholder={t('piggy.targetAmountPlaceholder')}

@@ -12,9 +12,21 @@ interface CardProps {
 }
 
 const ELEVATION_STYLE: Record<CardElevation, object> = {
-  flat:     {},
-  raised:   { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  elevated: { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 4 }, elevation: 6 },
+  flat: {},
+  raised: {
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  elevated: {
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
 }
 
 /**
@@ -27,10 +39,7 @@ const ELEVATION_STYLE: Record<CardElevation, object> = {
  */
 export function Card({ children, elevation = 'raised', className = '' }: CardProps) {
   return (
-    <View
-      style={ELEVATION_STYLE[elevation]}
-      className={`rounded-3xl bg-white ${className}`}
-    >
+    <View style={ELEVATION_STYLE[elevation]} className={`rounded-3xl bg-white ${className}`}>
       {children}
     </View>
   )

@@ -67,22 +67,26 @@ const vi: TranslationKeys = {
     tet: {
       name: 'Tết Nguyên Đán',
       description: 'Quà mừng năm mới',
-      defaultMessage: 'Chúc mừng năm mới! Gửi tặng bé chút vàng may mắn, mong năm mới tràn đầy niềm vui và bình an 🧧',
+      defaultMessage:
+        'Chúc mừng năm mới! Gửi tặng bé chút vàng may mắn, mong năm mới tràn đầy niềm vui và bình an 🧧',
     },
     sinhnhat: {
       name: 'Sinh Nhật',
       description: 'Quà mừng sinh nhật',
-      defaultMessage: 'Chúc mừng sinh nhật! Mong bé luôn khỏe mạnh, học giỏi và lớn lên thật hạnh phúc 🎂',
+      defaultMessage:
+        'Chúc mừng sinh nhật! Mong bé luôn khỏe mạnh, học giỏi và lớn lên thật hạnh phúc 🎂',
     },
     cuoihoi: {
       name: 'Cưới Hỏi',
       description: 'Quà mừng đám cưới',
-      defaultMessage: 'Chúc mừng hạnh phúc! Gửi tặng bé chút vàng khởi đầu, mong gia đình luôn hạnh phúc và thịnh vượng 💍',
+      defaultMessage:
+        'Chúc mừng hạnh phúc! Gửi tặng bé chút vàng khởi đầu, mong gia đình luôn hạnh phúc và thịnh vượng 💍',
     },
     thoinhoi: {
       name: 'Thôi Nôi',
       description: 'Mừng bé tròn một tuổi',
-      defaultMessage: 'Chúc mừng bé tròn một tuổi! Gửi tặng bé chút vàng khởi đầu, mong bé hay ăn chóng lớn và luôn vui vẻ 🍼',
+      defaultMessage:
+        'Chúc mừng bé tròn một tuổi! Gửi tặng bé chút vàng khởi đầu, mong bé hay ăn chóng lớn và luôn vui vẻ 🍼',
     },
   },
 

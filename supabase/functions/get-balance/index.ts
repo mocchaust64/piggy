@@ -75,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
     .from('user_profiles')
     .update({ grail_usdc_balance: usdcBalance })
     .eq('id', userId)
-    .then(({ error }) => {
+    .then(({ error }: { error: { message: string } | null }) => {
       if (error) console.error('[get-balance] Cache update failed:', error.message)
     })
 

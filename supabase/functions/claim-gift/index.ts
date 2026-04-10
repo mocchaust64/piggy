@@ -23,10 +23,11 @@
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { errorResponse, withErrorHandler } from '../_shared/errors.ts'
 import { requireAuth } from '../_shared/auth.ts'
+import type { AdminClient } from '../_shared/auth.ts'
 import { TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
 
 const RATE_LIMIT_WINDOW_MINUTES = 60
-const RATE_LIMIT_MAX_ATTEMPTS   = 10
+const RATE_LIMIT_MAX_ATTEMPTS = 10
 
 interface ClaimGiftBody {
   claimCode: string
@@ -42,25 +43,18 @@ type AuditResult =
   | 'rate_limited'
 
 async function insertAuditLog(
-  adminClient: ReturnType<import('../_shared/auth.ts').requireAuth extends (req: Request) => Promise<infer T> ? T : never>,
+  adminClient: AdminClient,
   params: {
     giftId: string | null
     userId: string
     result: AuditResult
-  }
+  },
 ) {
-  // Type simplification for audit inserts
-  await (adminClient as {
-    from: (t: string) => {
-      insert: (v: object) => Promise<void>
-    }
+  await adminClient.from('gift_claim_audit').insert({
+    gift_id: params.giftId,
+    attempted_by_user_id: params.userId,
+    result: params.result,
   })
-    .from('gift_claim_audit')
-    .insert({
-      gift_id:                params.giftId,
-      attempted_by_user_id:   params.userId,
-      result:                 params.result,
-    })
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -79,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
   // 2. Parse body
   let body: ClaimGiftBody
   try {
-    body = await req.json()
+    body = (await req.json()) as ClaimGiftBody
   } catch {
     return errorResponse('VALIDATION_ERROR', 'Request body must be valid JSON')
   }
@@ -101,7 +95,10 @@ const handler = async (req: Request): Promise<Response> => {
     .gte('attempted_at', windowStart)
 
   if ((recentAttempts ?? 0) >= RATE_LIMIT_MAX_ATTEMPTS) {
-    return errorResponse('RATE_LIMITED', 'Too many claim attempts. Please wait before trying again.')
+    return errorResponse(
+      'RATE_LIMITED',
+      'Too many claim attempts. Please wait before trying again.',
+    )
   }
 
   // 4. Look up gift by claim code
@@ -118,7 +115,11 @@ const handler = async (req: Request): Promise<Response> => {
 
   // 5. Status guards — handle non-pending states clearly
   if (gift.status === 'claimed') {
-    await insertAuditLog(adminClient as never, { giftId: gift.id, userId, result: 'already_claimed' })
+    await insertAuditLog(adminClient as never, {
+      giftId: gift.id,
+      userId,
+      result: 'already_claimed',
+    })
     return errorResponse('CONFLICT', 'This gift has already been claimed')
   }
   if (gift.status === 'expired' || new Date(gift.expires_at) < new Date()) {
@@ -130,7 +131,11 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse('CONFLICT', 'Gift claim already in progress. Please wait a moment.')
   }
   if (gift.status !== 'pending') {
-    await insertAuditLog(adminClient as never, { giftId: gift.id, userId, result: 'already_claimed' })
+    await insertAuditLog(adminClient as never, {
+      giftId: gift.id,
+      userId,
+      result: 'already_claimed',
+    })
     return errorResponse('CONFLICT', `Gift cannot be claimed (status: ${gift.status})`)
   }
 
@@ -153,12 +158,12 @@ const handler = async (req: Request): Promise<Response> => {
   const { data: lockedGift, error: lockError } = await adminClient
     .from('gifts')
     .update({
-      status:             'transfer_in_progress',
-      claim_attempts:     gift.amount, // Will be corrected below; using as placeholder
-      recipient_user_id:  userId,
+      status: 'transfer_in_progress',
+      claim_attempts: gift.amount, // Will be corrected below; using as placeholder
+      recipient_user_id: userId,
     })
     .eq('id', gift.id)
-    .eq('status', 'pending')           // ← Guard: only succeeds if still 'pending'
+    .eq('status', 'pending') // ← Guard: only succeeds if still 'pending'
     .gt('expires_at', new Date().toISOString()) // ← Guard: not expired
     .select()
     .single()
@@ -166,7 +171,10 @@ const handler = async (req: Request): Promise<Response> => {
   if (lockError || !lockedGift) {
     // Another request beat us to it
     await insertAuditLog(adminClient as never, { giftId: gift.id, userId, result: 'in_progress' })
-    return errorResponse('CONFLICT', 'Gift is currently being processed. Please try again in a moment.')
+    return errorResponse(
+      'CONFLICT',
+      'Gift is currently being processed. Please try again in a moment.',
+    )
   }
 
   // 8. Update piggy balance (custodial: trust our DB as source of truth per ADR-011)
@@ -190,37 +198,40 @@ const handler = async (req: Request): Promise<Response> => {
     adminClient
       .from('gifts')
       .update({
-        status:             'claimed',
-        claimed_at:         new Date().toISOString(),
-        recipient_user_id:  userId,
+        status: 'claimed',
+        claimed_at: new Date().toISOString(),
+        recipient_user_id: userId,
         grail_tx_reference: giftTxRef,
-        claim_attempts:     (lockedGift.claim_attempts ?? 0) + 1,
+        claim_attempts: (lockedGift.claim_attempts ?? 0) + 1,
       })
       .eq('id', gift.id),
 
     adminClient.from('transactions').insert({
-      user_id:            userId,
-      piggy_id:           toPiggyId,
-      type:               'gift_received',
-      amount:             goldAmountGrams,
+      user_id: userId,
+      piggy_id: toPiggyId,
+      type: 'gift_received',
+      amount: goldAmountGrams,
       grail_tx_reference: giftTxRef,
-      status:             'completed',
-      metadata:           { giftId: gift.id, claimCode },
+      status: 'completed',
+      metadata: { giftId: gift.id, claimCode },
     }),
 
     adminClient.from('transactions').insert({
-      user_id:            gift.from_user_id,
-      piggy_id:           gift.to_piggy_id,
-      type:               'gift_sent',
-      amount:             goldAmountGrams,
+      user_id: gift.from_user_id,
+      piggy_id: gift.to_piggy_id,
+      type: 'gift_sent',
+      amount: goldAmountGrams,
       grail_tx_reference: giftTxRef,
-      status:             'completed',
-      metadata:           { giftId: gift.id, claimedBy: userId },
+      status: 'completed',
+      metadata: { giftId: gift.id, claimedBy: userId },
     }),
   ])
 
   if (finishGift.error) {
-    console.error('[claim-gift] CRITICAL: Failed to mark gift as claimed:', finishGift.error.message)
+    console.error(
+      '[claim-gift] CRITICAL: Failed to mark gift as claimed:',
+      finishGift.error.message,
+    )
   }
   if (balanceError) {
     console.error('[claim-gift] CRITICAL: Balance update failed:', balanceError.message)
@@ -232,9 +243,9 @@ const handler = async (req: Request): Promise<Response> => {
   return jsonResponse({
     success: true,
     data: {
-      giftId:          gift.id,
+      giftId: gift.id,
       goldAmountGrams,
-      templateType:    gift.template_type,
+      templateType: gift.template_type,
     },
   })
 }

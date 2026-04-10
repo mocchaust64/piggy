@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next'
 import { Alert, SafeAreaView, Text, View } from 'react-native'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
@@ -8,8 +7,6 @@ import { Button } from '@/components/ui/Button'
  * Wallet address, language toggle, and notifications implemented in Sprint 6.
  */
 export default function ProfileScreen() {
-  const { t } = useTranslation()
-
   async function handleSignOut() {
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -30,11 +27,7 @@ export default function ProfileScreen() {
       </View>
 
       <View className="px-6 pb-8">
-        <Button
-          label="Sign Out"
-          variant="ghost"
-          onPress={handleSignOut}
-        />
+        <Button label="Sign Out" variant="ghost" onPress={handleSignOut} />
       </View>
     </SafeAreaView>
   )

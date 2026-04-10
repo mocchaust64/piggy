@@ -25,8 +25,8 @@ import { errorResponse, withErrorHandler } from '../_shared/errors.ts'
 import { requireAuth } from '../_shared/auth.ts'
 import { estimateBuyGold, purchaseGold, TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
 
-const MIN_GOLD_GRAMS = 0.01   // 0.01 gram minimum
-const MAX_GOLD_GRAMS = 1000   // 1kg maximum per transaction
+const MIN_GOLD_GRAMS = 0.01 // 0.01 gram minimum
+const MAX_GOLD_GRAMS = 1000 // 1kg maximum per transaction
 
 interface BuyGoldBody {
   piggyId: string
@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
   // 2. Parse and validate body
   let body: BuyGoldBody
   try {
-    body = await req.json()
+    body = (await req.json()) as BuyGoldBody
   } catch {
     return errorResponse('VALIDATION_ERROR', 'Request body must be valid JSON')
   }
@@ -61,7 +61,10 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse('VALIDATION_ERROR', 'piggyId is required')
   }
   if (!goldAmountGrams || goldAmountGrams < MIN_GOLD_GRAMS || goldAmountGrams > MAX_GOLD_GRAMS) {
-    return errorResponse('VALIDATION_ERROR', `goldAmountGrams must be between ${MIN_GOLD_GRAMS} and ${MAX_GOLD_GRAMS}`)
+    return errorResponse(
+      'VALIDATION_ERROR',
+      `goldAmountGrams must be between ${MIN_GOLD_GRAMS} and ${MAX_GOLD_GRAMS}`,
+    )
   }
   if (!maxUsdcAmount || maxUsdcAmount <= 0) {
     return errorResponse('VALIDATION_ERROR', 'maxUsdcAmount must be a positive number')
@@ -88,7 +91,10 @@ const handler = async (req: Request): Promise<Response> => {
     .single()
 
   if (profileError || !profile?.grail_user_id) {
-    return errorResponse('FORBIDDEN', 'GRAIL wallet not yet provisioned. Please open the app and try again.')
+    return errorResponse(
+      'FORBIDDEN',
+      'GRAIL wallet not yet provisioned. Please open the app and try again.',
+    )
   }
 
   // 5. Slippage guard: confirm USDC balance is sufficient
@@ -100,7 +106,10 @@ const handler = async (req: Request): Promise<Response> => {
   // 6. Get buy estimate for audit trail
   const estimate = await estimateBuyGold(goldAmountGrams)
   if (estimate.usdcRequired > maxUsdcAmount) {
-    return errorResponse('VALIDATION_ERROR', `Price moved. Required ${estimate.usdcRequired} USDC but max is ${maxUsdcAmount}`)
+    return errorResponse(
+      'VALIDATION_ERROR',
+      `Price moved. Required ${estimate.usdcRequired} USDC but max is ${maxUsdcAmount}`,
+    )
   }
 
   // 7. Insert a pending transaction record BEFORE calling GRAIL
@@ -108,14 +117,14 @@ const handler = async (req: Request): Promise<Response> => {
   const { data: pendingTx, error: txInsertError } = await adminClient
     .from('transactions')
     .insert({
-      user_id:              userId,
-      piggy_id:             piggyId,
-      type:                 'buy_gold',
-      amount:               goldAmountGrams,
-      usdc_amount:          estimate.usdcRequired,
-      gold_price_at_time:   estimate.pricePerGram,
-      status:               'pending',
-      metadata:             { estimate },
+      user_id: userId,
+      piggy_id: piggyId,
+      type: 'buy_gold',
+      amount: goldAmountGrams,
+      usdc_amount: estimate.usdcRequired,
+      gold_price_at_time: estimate.pricePerGram,
+      status: 'pending',
+      metadata: { estimate },
     })
     .select('id')
     .single()
@@ -135,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
     await adminClient
       .from('transactions')
       .update({
-        status:        'failed',
+        status: 'failed',
         error_message: err instanceof Error ? err.message : 'GRAIL purchase failed',
       })
       .eq('id', transactionRecordId)
@@ -150,15 +159,15 @@ const handler = async (req: Request): Promise<Response> => {
 
   const [balanceResult, txUpdateResult] = await Promise.all([
     adminClient.rpc('increment_piggy_balance', {
-      p_piggy_id:    piggyId,
-      p_gold_amount: goldAmountTroyOz,  // stored internally in troy oz for GRAIL parity
+      p_piggy_id: piggyId,
+      p_gold_amount: goldAmountTroyOz, // stored internally in troy oz for GRAIL parity
     }),
     adminClient
       .from('transactions')
       .update({
-        status:             'completed',
+        status: 'completed',
         grail_tx_reference: purchaseResult.transactionId,
-        metadata:           { estimate, grailResponse: purchaseResult },
+        metadata: { estimate, grailResponse: purchaseResult },
       })
       .eq('id', transactionRecordId),
   ])
@@ -180,8 +189,8 @@ const handler = async (req: Request): Promise<Response> => {
   return jsonResponse({
     success: true,
     data: {
-      transactionId:  transactionRecordId,
-      grailTxId:      purchaseResult.transactionId,
+      transactionId: transactionRecordId,
+      grailTxId: purchaseResult.transactionId,
       goldAmountGrams,
       piggyId,
     },

@@ -1,11 +1,5 @@
 import { useState } from 'react'
-import {
-  Pressable,
-  Text,
-  TextInput,
-  type TextInputProps,
-  View,
-} from 'react-native'
+import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native'
 
 interface InputProps extends Omit<TextInputProps, 'className'> {
   /** Field label shown above the input */
@@ -39,26 +33,15 @@ export function Input({
   const [isFocused, setIsFocused] = useState(false)
   const [isSecureVisible, setIsSecureVisible] = useState(false)
 
-  const borderColor = error
-    ? 'border-red-500'
-    : isFocused
-      ? 'border-brand-red'
-      : 'border-gray-200'
+  const borderColor = error ? 'border-red-500' : isFocused ? 'border-brand-red' : 'border-gray-200'
 
   const isPassword = secureTextEntry
 
   return (
     <View className={`gap-1.5 ${className}`}>
-      {label ? (
-        <Text className="text-sm font-medium text-gray-600">{label}</Text>
-      ) : null}
+      {label ? <Text className="text-sm font-medium text-gray-600">{label}</Text> : null}
 
-      <View
-        className={`
-          flex-row items-center rounded-2xl border bg-gray-50 px-4
-          ${borderColor}
-        `}
-      >
+      <View className={`flex-row items-center rounded-2xl border bg-gray-50 px-4 ${borderColor} `}>
         <TextInput
           {...textInputProps}
           secureTextEntry={isPassword && !isSecureVisible}
@@ -80,9 +63,7 @@ export function Input({
             hitSlop={8}
             accessibilityLabel={isSecureVisible ? 'Hide password' : 'Show password'}
           >
-            <Text className="text-sm text-brand-red">
-              {isSecureVisible ? 'Hide' : 'Show'}
-            </Text>
+            <Text className="text-sm text-brand-red">{isSecureVisible ? 'Hide' : 'Show'}</Text>
           </Pressable>
         ) : suffix ? (
           <Text className="text-sm font-medium text-gray-400">{suffix}</Text>
