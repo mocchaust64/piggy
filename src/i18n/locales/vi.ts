@@ -51,6 +51,8 @@ const vi: TranslationKeys = {
     signUp: 'Đăng ký',
     emailNotConfirmed: 'Vui lòng kiểm tra email để xác nhận tài khoản',
     registerSuccess: 'Tạo tài khoản thành công! Vui lòng kiểm tra email.',
+    emailAlreadyExists: 'Email này đã được đăng ký. Vui lòng đăng nhập.',
+    registrationFailed: 'Đăng ký thất bại. Vui lòng thử lại.',
   },
 
   onboarding: {

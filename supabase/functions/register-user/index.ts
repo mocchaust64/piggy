@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'email and password required' }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -32,8 +32,9 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
+      console.error('[register-user] createUser error:', error.message, error.status)
       return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -43,8 +44,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {
+    console.error('[register-user] unhandled error:', e.message)
     return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

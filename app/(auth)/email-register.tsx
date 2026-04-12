@@ -53,7 +53,16 @@ export default function EmailRegisterScreen() {
         body: { email: email.trim(), password },
       })
       if (fnError || data?.error) {
-        Alert.alert(t('auth.loginError'), data?.error ?? fnError?.message)
+        const rawMsg: string = data?.error ?? fnError?.message ?? ''
+        console.error('[Register] error:', rawMsg)
+        const isAlreadyExists =
+          rawMsg.toLowerCase().includes('already been registered') ||
+          rawMsg.toLowerCase().includes('already registered')
+        if (isAlreadyExists) {
+          setErrors({ email: t('auth.emailAlreadyExists') })
+        } else {
+          Alert.alert(t('auth.loginError'), t('auth.registrationFailed'))
+        }
         return
       }
 

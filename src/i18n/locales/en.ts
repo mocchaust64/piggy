@@ -49,6 +49,8 @@ const en = {
     signUp: 'Sign up',
     emailNotConfirmed: 'Please check your email to confirm your account',
     registerSuccess: 'Account created! Please check your email.',
+    emailAlreadyExists: 'This email is already registered. Please sign in instead.',
+    registrationFailed: 'Registration failed. Please try again.',
   },
 
   onboarding: {
