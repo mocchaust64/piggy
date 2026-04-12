@@ -17,6 +17,10 @@ const vi: TranslationKeys = {
     verifyOtp: 'Xác nhận',
     otpSent: 'Mã xác nhận đã được gửi đến email của bạn',
     loginError: 'Đăng nhập thất bại, vui lòng thử lại',
+    signInSubtitle: 'Bắt đầu hành trình tiết kiệm ngay hôm nay',
+    termsNote: 'Bằng cách tiếp tục, bạn đồng ý với',
+    termsOfService: 'Điều khoản sử dụng',
+    privacyPolicy: 'Chính sách bảo mật',
   },
 
   onboarding: {
@@ -117,6 +121,7 @@ const vi: TranslationKeys = {
 
   common: {
     loading: 'Đang tải...',
+    initializing: 'Đang khởi tạo...',
     error: 'Có lỗi xảy ra, vui lòng thử lại',
     retry: 'Thử lại',
     cancel: 'Hủy',

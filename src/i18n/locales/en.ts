@@ -15,6 +15,10 @@ const en = {
     verifyOtp: 'Verify',
     otpSent: 'Verification code sent to your email',
     loginError: 'Sign in failed, please try again',
+    signInSubtitle: 'Start your gold savings journey today',
+    termsNote: 'By continuing, you agree to our',
+    termsOfService: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
   },
 
   onboarding: {
@@ -112,6 +116,7 @@ const en = {
 
   common: {
     loading: 'Loading...',
+    initializing: 'Initializing...',
     error: 'Something went wrong, please try again',
     retry: 'Retry',
     cancel: 'Cancel',

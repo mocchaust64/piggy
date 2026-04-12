@@ -135,10 +135,10 @@ export default function LoginScreen() {
           <View className="flex-1">
             <View className="mb-12">
               <Text className="font-outfit-bold text-3xl text-gray-900">
-                {t('auth.signInTitle') || 'Chào mừng bạn'}
+                {t('auth.signInTitle')}
               </Text>
               <Text className="mt-1 font-outfit text-base text-gray-400">
-                Bắt đầu hành trình tiết kiệm ngay hôm nay
+                {t('auth.signInSubtitle')}
               </Text>
             </View>
 
@@ -146,7 +146,7 @@ export default function LoginScreen() {
               {/* Google Sign In — Premium Variant */}
               <Animated.View entering={FadeInUp.duration(600).delay(600)}>
                 <Button
-                  label={t('auth.signInWithGoogle') || 'Tiếp tục với Google'}
+                  label={t('auth.signInWithGoogle')}
                   variant="white"
                   onPress={handleGoogleSignIn}
                   loading={isLoading}
@@ -183,9 +183,11 @@ export default function LoginScreen() {
           {/* Footer note */}
           <SafeAreaView className="mt-auto items-center pb-8">
             <Text className="text-center font-outfit text-[11px] leading-5 text-gray-400">
-              Bằng cách tiếp tục, bạn đồng ý với {'\n'}
-              <Text className="font-outfit-semibold text-gray-600">Điều khoản sử dụng</Text> &{' '}
-              <Text className="font-outfit-semibold text-gray-600">Chính sách bảo mật</Text>
+              {t('auth.termsNote')}
+              {'\n'}
+              <Text className="font-outfit-semibold text-gray-600">{t('auth.termsOfService')}</Text>
+              {' & '}
+              <Text className="font-outfit-semibold text-gray-600">{t('auth.privacyPolicy')}</Text>
             </Text>
           </SafeAreaView>
         </Animated.View>
