@@ -5,6 +5,8 @@ const en = {
   },
 
   auth: {
+    signInTitle: 'Welcome Back',
+    signInWithGoogle: 'Continue with Google',
     signInWithApple: 'Sign in with Apple',
     signInWithEmail: 'Sign in with Email',
     emailPlaceholder: 'Enter your email',
@@ -119,6 +121,65 @@ const en = {
     back: 'Back',
     gram: 'g',
     usdc: 'USDC',
+  },
+
+  home: {
+    greeting: 'Hello',
+    appName: 'Piggy Bank',
+    usdcBalance: 'USDC Balance',
+    myPiggies: 'My Piggy Banks',
+    goldPrice: 'Gold Price',
+    perGram: '/g',
+    emptyTitle: 'No piggy banks yet',
+    emptySubtitle: 'Create the first one for your child!',
+    createFirst: 'Create Piggy Bank',
+  },
+
+  piggyCard: {
+    goldBalance: 'Gold balance',
+    progress: 'Goal',
+    buyGold: 'Buy Gold',
+    sendGift: 'Send Gift',
+    noTarget: 'No goal set',
+  },
+
+  createPiggy: {
+    title: 'Create Piggy Bank',
+    subtitle: 'A piggy bank for your little one',
+    chooseAvatar: 'Choose an avatar',
+    childName: "Child's name",
+    childNamePlaceholder: 'e.g. Baby An',
+    targetDescription: 'Savings goal (optional)',
+    targetDescriptionPlaceholder: 'e.g. Buy a bicycle',
+    targetAmount: 'Target gold amount (grams)',
+    targetAmountPlaceholder: '5',
+    createButton: 'Create Piggy Bank 🐷',
+    nameRequired: "Please enter your child's name",
+    success: 'Piggy bank created!',
+  },
+
+  piggyDetail: {
+    goldBalance: 'Gold balance',
+    equivalent: 'equivalent',
+    goalProgress: 'Goal Progress',
+    recentTx: 'Recent Transactions',
+    noTx: 'No transactions yet',
+    buyGold: 'Buy Gold',
+    sendGift: 'Send Gift',
+    achieved: 'Goal achieved! 🎉',
+  },
+
+  profile: {
+    title: 'Profile',
+    languageSection: 'Language',
+    signOut: 'Sign Out',
+  },
+
+  language: {
+    sectionTitle: 'Display Language',
+    en: 'English',
+    vi: 'Vietnamese',
+    changed: 'Language changed',
   },
 } as const
 

@@ -7,6 +7,8 @@ const vi: TranslationKeys = {
   },
 
   auth: {
+    signInTitle: 'Chào mừng quay lại',
+    signInWithGoogle: 'Tiếp tục với Google',
     signInWithApple: 'Đăng nhập với Apple',
     signInWithEmail: 'Đăng nhập bằng email',
     emailPlaceholder: 'Nhập email của bạn',
@@ -124,6 +126,65 @@ const vi: TranslationKeys = {
     back: 'Quay lại',
     gram: 'gram',
     usdc: 'USDC',
+  },
+
+  home: {
+    greeting: 'Chào bạn',
+    appName: 'Vàng Heo Đất',
+    usdcBalance: 'Số dư USDC',
+    myPiggies: 'Heo Đất của con',
+    goldPrice: 'Giá vàng',
+    perGram: '/gram',
+    emptyTitle: 'Chưa có heo đất nào',
+    emptySubtitle: 'Hãy tạo heo đất đầu tiên cho con!',
+    createFirst: 'Tạo Heo Đất',
+  },
+
+  piggyCard: {
+    goldBalance: 'Số dư vàng',
+    progress: 'Mục tiêu',
+    buyGold: 'Mua Vàng',
+    sendGift: 'Tặng Quà',
+    noTarget: 'Chưa đặt mục tiêu',
+  },
+
+  createPiggy: {
+    title: 'Tạo Heo Đất',
+    subtitle: 'Một chiếc heo đất cho bé yêu của bạn',
+    chooseAvatar: 'Chọn hình đại diện',
+    childName: 'Tên của con',
+    childNamePlaceholder: 'VD: Bé An',
+    targetDescription: 'Mục tiêu tiết kiệm (tùy chọn)',
+    targetDescriptionPlaceholder: 'VD: Mua xe đạp',
+    targetAmount: 'Số vàng mục tiêu (gram)',
+    targetAmountPlaceholder: '5',
+    createButton: 'Tạo Heo Đất 🐷',
+    nameRequired: 'Vui lòng nhập tên của con',
+    success: 'Đã tạo heo đất!',
+  },
+
+  piggyDetail: {
+    goldBalance: 'Số dư vàng',
+    equivalent: 'tương đương',
+    goalProgress: 'Tiến độ mục tiêu',
+    recentTx: 'Giao dịch gần đây',
+    noTx: 'Chưa có giao dịch nào',
+    buyGold: 'Mua Vàng',
+    sendGift: 'Tặng Quà',
+    achieved: 'Đã đạt mục tiêu! 🎉',
+  },
+
+  profile: {
+    title: 'Tài khoản',
+    languageSection: 'Ngôn ngữ',
+    signOut: 'Đăng xuất',
+  },
+
+  language: {
+    sectionTitle: 'Ngôn ngữ hiển thị',
+    en: 'Tiếng Anh',
+    vi: 'Tiếng Việt',
+    changed: 'Đã đổi ngôn ngữ',
   },
 }
 

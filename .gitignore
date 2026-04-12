@@ -42,3 +42,9 @@ supabase/.branches/
 supabase/.temp/
 supabase/functions/.temp/
 supabase/functions/.debug/
+
+# @end expo-cli
+
+# Internal Documentation & AI Guardrails (Senior Rules)
+DEVELOPMENT_GUIDE.md
+.claude

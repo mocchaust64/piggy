@@ -1,10 +1,14 @@
 import { Tabs } from 'expo-router'
-import { Text } from 'react-native'
+import { StyleSheet, Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 /** Tab icon using emoji — replace with SVG icons in Sprint 6 */
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 26 : 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+  return (
+    <Text style={[styles.tabIcon, focused ? styles.tabIconFocused : styles.tabIconInactive]}>
+      {emoji}
+    </Text>
+  )
 }
 
 /**
@@ -60,3 +64,18 @@ export default function TabsLayout() {
     </Tabs>
   )
 }
+
+const styles = StyleSheet.create({
+  tabIcon: {
+    fontSize: 22,
+    opacity: 0.5,
+  },
+  tabIconFocused: {
+    fontSize: 26,
+    opacity: 1,
+  },
+  tabIconInactive: {
+    fontSize: 22,
+    opacity: 0.5,
+  },
+})

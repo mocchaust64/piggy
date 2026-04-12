@@ -4,204 +4,210 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   SafeAreaView,
+  StyleSheet,
   Text,
   View,
 } from 'react-native'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-
-/** Email validation regex — RFC 5322 subset */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-type LoginStep = 'email' | 'otp'
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin'
+import LottieView from 'lottie-react-native'
+import * as AppleAuthentication from 'expo-apple-authentication'
+import { StatusBar } from 'expo-status-bar'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
 
 /**
- * Login screen — Email OTP flow (Step 1: request OTP, Step 2: verify OTP).
- *
- * Apple Sign In will be added in Sprint 3b.
- * Navigation redirect is handled by `useSession` in `_layout.tsx`.
+ * Super App Standard Login Screen — Social-Only Flow.
+ * Features: Linear Gradients, Reanimated entrance effects, Haptics.
  */
 export default function LoginScreen() {
   const { t } = useTranslation()
-
-  const [step, setStep] = useState<LoginStep>('email')
-  const [email, setEmail] = useState('')
-  const [otp, setOtp] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [emailError, setEmailError] = useState('')
-  const [otpError, setOtpError] = useState('')
+  const insets = useSafeAreaInsets()
 
-  // ─── Step 1: Request OTP ──────────────────────────────────────────────────
+  // ─── Auth Handlers ────────────────────────────────────────────────────────
 
-  function validateEmail(): boolean {
-    if (!email.trim()) {
-      setEmailError('Email is required')
-      return false
-    }
-    if (!EMAIL_REGEX.test(email.trim())) {
-      setEmailError('Enter a valid email address')
-      return false
-    }
-    setEmailError('')
-    return true
-  }
+  async function handleGoogleSignIn() {
+    if (isLoading) return
 
-  async function handleSendOtp() {
-    if (!validateEmail()) return
+    try {
+      setIsLoading(true)
+      await GoogleSignin.hasPlayServices()
 
-    setIsLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        // If user doesn't have an account, create one automatically
-        shouldCreateUser: true,
-      },
-    })
-    setIsLoading(false)
+      // Force Account Picker
+      try {
+        await GoogleSignin.signOut()
+      } catch {}
 
-    if (error) {
-      // Rate limit is the most common error here
-      if (error.message.toLowerCase().includes('rate limit')) {
-        setEmailError('Too many requests, please try again in a minute')
+      const response = await GoogleSignin.signIn()
+      const idToken = response.data?.idToken
+
+      if (idToken) {
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        })
+        if (error) Alert.alert(t('auth.loginError'), error.message)
       } else {
+        throw new Error('No ID token present!')
+      }
+    } catch (error: any) {
+      console.error('[handleGoogleSignIn] Exception:', error)
+      if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert(t('auth.loginError'), error.message)
       }
-      return
+    } finally {
+      setIsLoading(false)
     }
-
-    setStep('otp')
   }
 
-  // ─── Step 2: Verify OTP ───────────────────────────────────────────────────
+  async function handleAppleSignIn() {
+    if (isLoading) return
 
-  function validateOtp(): boolean {
-    if (!otp.trim()) {
-      setOtpError('Verification code is required')
-      return false
+    try {
+      setIsLoading(true)
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+
+      if (credential.identityToken) {
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        })
+        if (error) Alert.alert(t('auth.loginError'), error.message)
+      }
+    } catch (e: any) {
+      console.error('[handleAppleSignIn] Exception:', e)
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert(t('auth.loginError'), e.message)
+      }
+    } finally {
+      setIsLoading(false)
     }
-    if (otp.trim().length !== 6 || !/^\d{6}$/.test(otp.trim())) {
-      setOtpError('Code must be exactly 6 digits')
-      return false
-    }
-    setOtpError('')
-    return true
   }
-
-  async function handleVerifyOtp() {
-    if (!validateOtp()) return
-
-    setIsLoading(true)
-    const { error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: otp.trim(),
-      type: 'email',
-    })
-    setIsLoading(false)
-
-    if (error) {
-      setOtpError('Invalid or expired code, please try again')
-      return
-    }
-
-    // ✅ On success, `useSession` in _layout.tsx will automatically
-    // detect the new session and redirect to /(tabs)
-  }
-
-  function handleBackToEmail() {
-    setStep('email')
-    setOtp('')
-    setOtpError('')
-  }
-
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-brand-red">
+      <StatusBar style="light" />
+
+      {/* Premium Background Gradient */}
+      <LinearGradient colors={['#D4001A', '#A80014', '#80000F']} style={styles.gradient} />
+
+      {/* Hero Section */}
+      <View
+        className="items-center justify-center"
+        style={{ height: 340 + insets.top, paddingTop: insets.top }}
+      >
+        <Animated.View entering={FadeInDown.duration(800).delay(200)}>
+          <LottieView
+            source={require('../../assets/lottie/piggy-intro.json')}
+            autoPlay
+            loop
+            style={styles.heroLottie}
+          />
+        </Animated.View>
+        <Animated.View entering={FadeInDown.duration(800).delay(400)} className="items-center px-6">
+          <Text className="text-center font-outfit-bold text-4xl tracking-tight text-white">
+            {t('app.name')}
+          </Text>
+          <Text className="mt-1 text-center font-outfit-medium text-lg text-red-100 opacity-80">
+            {t('app.tagline')}
+          </Text>
+        </Animated.View>
+      </View>
+
+      {/* Form Card */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-1 justify-center px-6">
-          {/* Logo */}
-          <View className="mb-10 items-center gap-3">
-            <Text style={{ fontSize: 72 }}>🐷</Text>
-            <Text className="text-3xl font-bold text-gray-900">{t('app.name')}</Text>
-            <Text className="text-center text-base text-gray-400">{t('app.tagline')}</Text>
+        <Animated.View
+          entering={FadeInUp.duration(800).springify().damping(15)}
+          className="flex-1 rounded-t-[48px] bg-white px-8 pt-12 shadow-2xl"
+        >
+          <View className="flex-1">
+            <View className="mb-12">
+              <Text className="font-outfit-bold text-3xl text-gray-900">
+                {t('auth.signInTitle') || 'Chào mừng bạn'}
+              </Text>
+              <Text className="mt-1 font-outfit text-base text-gray-400">
+                Bắt đầu hành trình tiết kiệm ngay hôm nay
+              </Text>
+            </View>
+
+            <View className="gap-5">
+              {/* Google Sign In — Premium Variant */}
+              <Animated.View entering={FadeInUp.duration(600).delay(600)}>
+                <Button
+                  label={t('auth.signInWithGoogle') || 'Tiếp tục với Google'}
+                  variant="white"
+                  onPress={handleGoogleSignIn}
+                  loading={isLoading}
+                  icon="google"
+                  textClassName="font-outfit-semibold text-gray-800"
+                />
+              </Animated.View>
+
+              {/* Apple Sign In */}
+              {Platform.OS === 'ios' && (
+                <Animated.View entering={FadeInUp.duration(600).delay(750)}>
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={16}
+                    style={styles.appleButton}
+                    onPress={handleAppleSignIn}
+                  />
+                </Animated.View>
+              )}
+            </View>
+
+            {/* Separator Decor */}
+            <Animated.View
+              entering={FadeInUp.duration(600).delay(900)}
+              className="mt-12 flex-row items-center justify-center opacity-20"
+            >
+              <View className="h-[0.5px] flex-1 bg-gray-400" />
+              <View className="mx-4 h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <View className="h-[0.5px] flex-1 bg-gray-400" />
+            </Animated.View>
           </View>
 
-          {step === 'email' ? (
-            // ── Step 1: Email Input ──────────────────────────────────────────
-            <View className="gap-4">
-              <Input
-                label="Email"
-                placeholder={t('auth.emailPlaceholder')}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text)
-                  if (emailError) setEmailError('')
-                }}
-                error={emailError}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                returnKeyType="done"
-                onSubmitEditing={handleSendOtp}
-              />
-
-              <Button
-                label={isLoading ? t('common.loading') : t('auth.sendOtp')}
-                onPress={handleSendOtp}
-                loading={isLoading}
-              />
-            </View>
-          ) : (
-            // ── Step 2: OTP Input ────────────────────────────────────────────
-            <View className="gap-4">
-              <View className="gap-1">
-                <Text className="text-center text-base text-gray-500">{t('auth.otpSent')}</Text>
-                <Text className="text-center text-base font-semibold text-gray-900">{email}</Text>
-              </View>
-
-              <Input
-                label="Verification Code"
-                placeholder={t('auth.otpPlaceholder')}
-                value={otp}
-                onChangeText={(text) => {
-                  setOtp(text)
-                  if (otpError) setOtpError('')
-                }}
-                error={otpError}
-                keyboardType="number-pad"
-                autoComplete="one-time-code"
-                maxLength={6}
-                returnKeyType="done"
-                onSubmitEditing={handleVerifyOtp}
-              />
-
-              <Button
-                label={isLoading ? t('common.loading') : t('auth.verifyOtp')}
-                onPress={handleVerifyOtp}
-                loading={isLoading}
-              />
-
-              {/* Back link */}
-              <Pressable
-                onPress={handleBackToEmail}
-                hitSlop={8}
-                className="items-center py-2"
-                accessibilityRole="button"
-                accessibilityLabel="Change email address"
-              >
-                <Text className="text-sm text-brand-red">← Change email address</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
+          {/* Footer note */}
+          <SafeAreaView className="mt-auto items-center pb-8">
+            <Text className="text-center font-outfit text-[11px] leading-5 text-gray-400">
+              Bằng cách tiếp tục, bạn đồng ý với {'\n'}
+              <Text className="font-outfit-semibold text-gray-600">Điều khoản sử dụng</Text> &{' '}
+              <Text className="font-outfit-semibold text-gray-600">Chính sách bảo mật</Text>
+            </Text>
+          </SafeAreaView>
+        </Animated.View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  heroLottie: {
+    width: 240,
+    height: 240,
+  },
+  appleButton: {
+    width: '100%',
+    height: 56,
+  },
+})

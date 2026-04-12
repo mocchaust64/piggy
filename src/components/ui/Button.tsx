@@ -1,10 +1,11 @@
-import { ActivityIndicator, Pressable, Text } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+import * as Haptics from 'expo-haptics'
+import { Pressable } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 
 /** Visual variants of the Button component */
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'white'
 
 interface ButtonProps {
   /** Display label */
@@ -19,6 +20,10 @@ interface ButtonProps {
   loading?: boolean
   /** Extra NativeWind className for the container */
   className?: string
+  /** Text style override */
+  textClassName?: string
+  /** Optional icon name (Ionicons) or special 'google' icon */
+  icon?: string
 }
 
 const VARIANT_CONTAINER: Record<ButtonVariant, string> = {
@@ -26,6 +31,7 @@ const VARIANT_CONTAINER: Record<ButtonVariant, string> = {
   secondary: 'bg-piggy-pink',
   ghost: 'border border-brand-red',
   danger: 'bg-red-600',
+  white: 'bg-white border border-gray-100',
 }
 
 const VARIANT_LABEL: Record<ButtonVariant, string> = {
@@ -33,14 +39,13 @@ const VARIANT_LABEL: Record<ButtonVariant, string> = {
   secondary: 'text-brand-red',
   ghost: 'text-brand-red',
   danger: 'text-white',
+  white: 'text-gray-900',
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 /**
- * Reusable button component with spring press animation.
- *
- * @example
- * <Button label="Create Piggy" onPress={handleCreate} />
- * <Button label="Loading..." loading onPress={() => {}} />
+ * Premium Reusable button component with Spring scale animation and Haptics.
  */
 export function Button({
   label,
@@ -49,42 +54,70 @@ export function Button({
   disabled = false,
   loading = false,
   className = '',
+  textClassName = '',
+  icon,
 }: ButtonProps) {
   const scale = useSharedValue(1)
+  const isInteractive = !disabled && !loading
+  const opacity = isInteractive ? 'opacity-100' : 'opacity-60'
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: withSpring(scale.value, { damping: 12, stiffness: 200 }) }],
   }))
 
-  function handlePressIn() {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 })
+  const handlePressIn = () => {
+    if (isInteractive) {
+      scale.value = 0.95
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    }
   }
 
-  function handlePressOut() {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 })
+  const handlePressOut = () => {
+    if (isInteractive) {
+      scale.value = 1
+    }
   }
 
-  const isInteractive = !disabled && !loading
-  const opacity = isInteractive ? 'opacity-100' : 'opacity-50'
+  const handlePress = () => {
+    if (isInteractive) {
+      onPress()
+    }
+  }
 
   return (
     <AnimatedPressable
-      style={animatedStyle}
-      onPress={isInteractive ? onPress : undefined}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessible
       accessibilityRole="button"
       accessibilityState={{ disabled: !isInteractive }}
-      className={`h-14 flex-row items-center justify-center rounded-2xl px-6 ${VARIANT_CONTAINER[variant]} ${opacity} ${className} `}
+      className={`h-[58px] flex-row items-center justify-center rounded-2xl px-6 shadow-sm active:opacity-90 ${VARIANT_CONTAINER[variant]} ${opacity} ${className} `}
+      style={animatedStyle}
     >
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'ghost' || variant === 'secondary' ? '#D4001A' : '#FFFFFF'}
+          color={
+            variant === 'ghost' || variant === 'secondary' || variant === 'white'
+              ? '#D4001A'
+              : '#FFFFFF'
+          }
         />
       ) : (
-        <Text className={`text-base font-semibold ${VARIANT_LABEL[variant]}`}>{label}</Text>
+        <View className="flex-row items-center justify-center gap-3">
+          {icon === 'google' && <Ionicons name="logo-google" size={20} color="#EA4335" />}
+          {icon && icon !== 'google' && (
+            <Ionicons
+              name={icon as any}
+              size={20}
+              color={variant === 'primary' || variant === 'danger' ? 'white' : '#D4001A'}
+            />
+          )}
+          <Text className={`text-base font-bold ${VARIANT_LABEL[variant]} ${textClassName}`}>
+            {label}
+          </Text>
+        </View>
       )}
     </AnimatedPressable>
   )

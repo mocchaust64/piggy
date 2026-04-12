@@ -10,9 +10,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'heodat',
   userInterfaceStyle: 'light',
   splash: {
-    image: './assets/splash-icon.png',
+    image: './assets/splash-hero.jpg',
     resizeMode: 'contain',
-    backgroundColor: '#D4001A',
+    backgroundColor: '#FFFFFF',
   },
   ios: {
     supportsTablet: false,
@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
+      foregroundImage: './assets/icon.png',
       backgroundColor: '#D4001A',
     },
     package: 'com.heodat.app',
@@ -45,12 +45,31 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-apple-authentication',
-  ],
+    'expo-localization',
+    'expo-font',
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+      ? [
+          '@react-native-google-signin/google-signin',
+          {
+            iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+            iosUrlScheme: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID.split('.')
+              .reverse()
+              .join('.'),
+          },
+        ]
+      : null,
+  ].filter(Boolean) as (string | [string, any])[],
   experiments: {
     typedRoutes: true,
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    eas: {
+      projectId: '4d5733ab-fec0-4ae5-be63-fdee2040b823',
+    },
   },
 })

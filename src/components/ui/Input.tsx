@@ -1,5 +1,12 @@
 import { useState } from 'react'
 import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native'
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useDerivedValue,
+  withTiming,
+  FadeInDown,
+} from 'react-native-reanimated'
 
 interface InputProps extends Omit<TextInputProps, 'className'> {
   /** Field label shown above the input */
@@ -13,6 +20,8 @@ interface InputProps extends Omit<TextInputProps, 'className'> {
   /** Extra NativeWind className for the outer container */
   className?: string
 }
+
+const AnimatedView = Animated.createAnimatedComponent(View)
 
 /**
  * Controlled text input with label, error and hint support.
@@ -33,15 +42,30 @@ export function Input({
   const [isFocused, setIsFocused] = useState(false)
   const [isSecureVisible, setIsSecureVisible] = useState(false)
 
-  const borderColor = error ? 'border-red-500' : isFocused ? 'border-brand-red' : 'border-gray-200'
+  // Smooth color transition for focus/error states
+  const transition = useDerivedValue(() => {
+    return withTiming(error ? 1 : isFocused ? 0.5 : 0, { duration: 250 })
+  })
+
+  const inputStyle = useAnimatedStyle(() => {
+    const borderColor = interpolateColor(
+      transition.value,
+      [0, 0.5, 1],
+      ['#E5E7EB', '#D4001A', '#EF4444'], // gray-200, brand-red, red-500
+    )
+    return { borderColor }
+  })
 
   const isPassword = secureTextEntry
 
   return (
     <View className={`gap-1.5 ${className}`}>
-      {label ? <Text className="text-sm font-medium text-gray-600">{label}</Text> : null}
+      {label ? <Text className="text-sm font-semibold text-gray-700">{label}</Text> : null}
 
-      <View className={`flex-row items-center rounded-2xl border bg-gray-50 px-4 ${borderColor} `}>
+      <AnimatedView
+        style={inputStyle}
+        className="flex-row items-center rounded-2xl border bg-gray-50 px-4"
+      >
         <TextInput
           {...textInputProps}
           secureTextEntry={isPassword && !isSecureVisible}
@@ -54,7 +78,7 @@ export function Input({
             textInputProps.onBlur?.(e)
           }}
           placeholderTextColor="#9CA3AF"
-          className="h-14 flex-1 text-base text-gray-900"
+          className="h-14 flex-1 text-base font-medium text-gray-900"
         />
 
         {isPassword ? (
@@ -63,15 +87,22 @@ export function Input({
             hitSlop={8}
             accessibilityLabel={isSecureVisible ? 'Hide password' : 'Show password'}
           >
-            <Text className="text-sm text-brand-red">{isSecureVisible ? 'Hide' : 'Show'}</Text>
+            <Text className="text-sm font-semibold text-brand-red">
+              {isSecureVisible ? 'Hide' : 'Show'}
+            </Text>
           </Pressable>
         ) : suffix ? (
-          <Text className="text-sm font-medium text-gray-400">{suffix}</Text>
+          <Text className="text-sm font-semibold text-gray-400">{suffix}</Text>
         ) : null}
-      </View>
+      </AnimatedView>
 
       {error ? (
-        <Text className="text-sm text-red-500">{error}</Text>
+        <Animated.Text
+          entering={FadeInDown.duration(300)}
+          className="text-sm font-medium text-red-500"
+        >
+          {error}
+        </Animated.Text>
       ) : hint ? (
         <Text className="text-sm text-gray-400">{hint}</Text>
       ) : null}

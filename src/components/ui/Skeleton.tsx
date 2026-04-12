@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -64,16 +64,7 @@ export function Skeleton({
  */
 export function SkeletonPiggyCard() {
   return (
-    <View
-      className="gap-3 rounded-3xl bg-white p-4"
-      style={{
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
-      }}
-    >
+    <View className="gap-3 rounded-3xl bg-white p-4" style={styles.cardShadow}>
       <View className="flex-row items-center gap-3">
         <Skeleton circle className="h-14 w-14" />
         <View className="flex-1 gap-2">
@@ -85,3 +76,13 @@ export function SkeletonPiggyCard() {
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  cardShadow: {
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+})

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useRouter, useSegments } from 'expo-router'
+import { useRouter, useSegments, useRootNavigationState } from 'expo-router'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -42,20 +42,23 @@ export function useSession(): UseSessionReturn {
     return () => subscription.unsubscribe()
   }, [])
 
-  // 3. Navigation guard — runs after loading is complete
+  // 3. Navigation guard — runs after loading is complete AND root navigator is ready
+  const rootNavigationState = useRootNavigationState()
+
   useEffect(() => {
-    if (isLoading) return
+    // Check if initial loading is done AND the root navigator state is ready
+    if (isLoading || !rootNavigationState?.key) return
 
     const inAuthGroup = segments[0] === '(auth)'
 
     if (!session && !inAuthGroup) {
-      // Not logged in → push to login
+      // Not logged in → push to login (safety: only if not already there)
       router.replace('/(auth)/login')
     } else if (session && inAuthGroup) {
       // Logged in but still on auth screens → push to home
       router.replace('/(tabs)')
     }
-  }, [session, isLoading, segments, router])
+  }, [session, isLoading, segments, router, rootNavigationState?.key])
 
   return {
     session,

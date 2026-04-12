@@ -21,7 +21,8 @@
       "Bash(git add app/*)",
       "Bash(git add supabase/*)",
       "Bash(cat*)",
-      "Bash(ls*)"
+      "Bash(ls*)",
+      "Bash(sips -s format png -z 1024 1024 assets/icon.png)"
     ],
     "deny": [
       "Bash(git push --force*)",

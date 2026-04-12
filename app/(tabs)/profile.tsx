@@ -1,16 +1,23 @@
 import { Alert, SafeAreaView, Text, View } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 
-/**
- * User profile screen — shell placeholder for Sprint 1.
- * Wallet address, language toggle, and notifications implemented in Sprint 6.
- */
 export default function ProfileScreen() {
+  const { t } = useTranslation()
+
   async function handleSignOut() {
+    try {
+      await GoogleSignin.signOut()
+    } catch (e) {
+      console.error('[handleSignOut] Google SignOut Error:', e)
+    }
+
     const { error } = await supabase.auth.signOut()
     if (error) {
-      Alert.alert('Error', error.message)
+      Alert.alert(t('common.error'), error.message)
     }
     // useSession hook will detect the logout and redirect to /(auth)/login
   }
@@ -18,16 +25,15 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-6 py-4">
-        <Text className="text-2xl font-bold text-gray-900">Profile</Text>
+        <Text className="text-2xl font-bold text-gray-900">{t('profile.title')}</Text>
       </View>
 
-      <View className="flex-1 items-center justify-center gap-6 px-6">
-        <Text style={{ fontSize: 64 }}>👤</Text>
-        <Text className="text-base text-gray-400">Profile features coming soon</Text>
+      <View className="flex-1 px-6 pt-4">
+        <LanguageSwitcher />
       </View>
 
       <View className="px-6 pb-8">
-        <Button label="Sign Out" variant="ghost" onPress={handleSignOut} />
+        <Button label={t('profile.signOut')} variant="ghost" onPress={handleSignOut} />
       </View>
     </SafeAreaView>
   )

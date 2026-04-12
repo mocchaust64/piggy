@@ -17,7 +17,11 @@ module.exports = {
         },
       },
       fontFamily: {
-        // Thêm custom fonts khi có
+        sans: ['Outfit_400Regular'],
+        outfit: ['Outfit_400Regular'],
+        'outfit-medium': ['Outfit_500Medium'],
+        'outfit-semibold': ['Outfit_600SemiBold'],
+        'outfit-bold': ['Outfit_700Bold'],
       },
     },
   },
