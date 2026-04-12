@@ -63,7 +63,7 @@ export default function OtpVerifyScreen() {
         const { error: err } = await supabase.auth.verifyOtp({
           email: target,
           token: trimmed,
-          type: 'signup',
+          type: 'email',
         })
         supabaseError = err
       }
@@ -84,7 +84,7 @@ export default function OtpVerifyScreen() {
       if (type === 'phone') {
         await supabase.auth.signInWithOtp({ phone: target })
       } else {
-        await supabase.auth.resend({ type: 'signup', email: target })
+        await supabase.auth.signInWithOtp({ email: target, options: { shouldCreateUser: false } })
       }
       setCountdown(OTP_RESEND_SECONDS)
       setOtp('')

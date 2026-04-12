@@ -26,6 +26,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "heodat",
     "plugins": ["expo-router"],
     "extra": {
       "router": {},

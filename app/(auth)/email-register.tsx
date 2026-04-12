@@ -48,18 +48,25 @@ export default function EmailRegisterScreen() {
     if (!validate()) return
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signUp({
+      // Create account via Edge Function (auto-confirmed, no email verify needed)
+      const { data, error: fnError } = await supabase.functions.invoke('register-user', {
+        body: { email: email.trim(), password },
+      })
+      if (fnError || data?.error) {
+        Alert.alert(t('auth.loginError'), data?.error ?? fnError?.message)
+        return
+      }
+
+      // Sign in immediately after registration
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       })
-      if (error) {
-        Alert.alert(t('auth.loginError'), error.message)
+      if (signInError) {
+        Alert.alert(t('auth.loginError'), signInError.message)
         return
       }
-      // Supabase sends a confirmation link email — go back to login
-      Alert.alert(t('auth.registerSuccess'), t('auth.emailNotConfirmed'), [
-        { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-      ])
+      // useSession in _layout will redirect to (tabs)
     } catch (e: any) {
       Alert.alert(t('auth.loginError'), e.message)
     } finally {
