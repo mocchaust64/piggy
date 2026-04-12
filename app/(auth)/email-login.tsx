@@ -1,0 +1,237 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
+import { useRouter } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
+import { Ionicons } from '@expo/vector-icons'
+import { supabase } from '@/lib/supabaseClient'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+
+export default function EmailLoginScreen() {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const insets = useSafeAreaInsets()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+
+  function validate(): boolean {
+    const next: typeof errors = {}
+    if (!email.trim() || !email.includes('@')) next.email = t('auth.emailPlaceholder')
+    if (password.length < 8) next.password = t('auth.passwordTooShort')
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  async function handleLogin() {
+    if (!validate()) return
+    setIsLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+      if (error) {
+        if (error.message.toLowerCase().includes('email')) {
+          setErrors({ email: error.message })
+        } else {
+          Alert.alert(t('auth.loginError'), error.message)
+        }
+      }
+      // useSession in _layout handles redirect on success
+    } catch (e: any) {
+      Alert.alert(t('auth.loginError'), e.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <View style={styles.root}>
+      <StatusBar style="light" />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+        </Pressable>
+      </View>
+
+      {/* Title */}
+      <Animated.View entering={FadeInDown.duration(600).delay(100)} style={styles.titleBlock}>
+        <Text style={styles.title}>{t('auth.emailLoginTitle')}</Text>
+        <Text style={styles.subtitle}>{t('auth.emailLoginSubtitle')}</Text>
+      </Animated.View>
+
+      {/* Card */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+      >
+        <Animated.View
+          entering={FadeInUp.duration(600).springify().damping(15)}
+          style={styles.card}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scroll}
+          >
+            <View style={styles.form}>
+              <Input
+                label="Email"
+                placeholder={t('auth.emailPlaceholder')}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v)
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }))
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                error={errors.email}
+                returnKeyType="next"
+              />
+
+              <Input
+                label={t('auth.password')}
+                placeholder={t('auth.passwordPlaceholder')}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v)
+                  if (errors.password) setErrors((e) => ({ ...e, password: undefined }))
+                }}
+                secureTextEntry
+                autoComplete="password"
+                error={errors.password}
+                onSubmitEditing={handleLogin}
+                returnKeyType="done"
+              />
+
+              <Button
+                label={t('auth.signIn')}
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={!email.trim() || !password}
+              />
+
+              {/* Register link */}
+              <View style={styles.registerRow}>
+                <Text style={styles.registerText}>{t('auth.noAccount')} </Text>
+                <Pressable onPress={() => router.push('/(auth)/email-register')} hitSlop={8}>
+                  <Text style={styles.registerLink}>{t('auth.signUp')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+
+          <SafeAreaView style={styles.footer}>
+            <Text style={styles.footerText}>
+              {t('auth.termsNote')}
+              {'\n'}
+              <Text style={styles.footerLink}>{t('auth.termsOfService')}</Text>
+              {' & '}
+              <Text style={styles.footerLink}>{t('auth.privacyPolicy')}</Text>
+            </Text>
+          </SafeAreaView>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#D4001A',
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: {
+    paddingHorizontal: 32,
+    paddingBottom: 32,
+  },
+  title: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 32,
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.75)',
+  },
+  card: {
+    flex: 1,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    backgroundColor: '#FFFFFF',
+  },
+  scroll: {
+    paddingHorizontal: 32,
+    paddingTop: 40,
+    paddingBottom: 16,
+  },
+  form: {
+    gap: 20,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  registerText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  registerLink: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: '#D4001A',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingHorizontal: 32,
+  },
+  footerText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  footerLink: {
+    fontFamily: 'Outfit_600SemiBold',
+    color: '#6B7280',
+  },
+})

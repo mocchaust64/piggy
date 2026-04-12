@@ -4,13 +4,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin'
 import LottieView from 'lottie-react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
@@ -19,32 +23,55 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
 
-/**
- * Super App Standard Login Screen — Social-Only Flow.
- * Features: Linear Gradients, Reanimated entrance effects, Haptics.
- */
 export default function LoginScreen() {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
   const insets = useSafeAreaInsets()
 
-  // ─── Auth Handlers ────────────────────────────────────────────────────────
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false)
+  const [isLoadingSocial, setIsLoadingSocial] = useState(false)
+
+  // ─── Email / Password ────────────────────────────────────────────────────────
+
+  async function handleEmailLogin() {
+    const next: typeof errors = {}
+    if (!email.trim() || !email.includes('@')) next.email = t('auth.emailPlaceholder')
+    if (password.length < 8) next.password = t('auth.passwordTooShort')
+    if (Object.keys(next).length > 0) {
+      setErrors(next)
+      return
+    }
+    setErrors({})
+    setIsLoadingEmail(true)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+      if (error) Alert.alert(t('auth.loginError'), error.message)
+      // useSession in _layout handles redirect on success
+    } catch (e: any) {
+      Alert.alert(t('auth.loginError'), e.message)
+    } finally {
+      setIsLoadingEmail(false)
+    }
+  }
+
+  // ─── Google ──────────────────────────────────────────────────────────────────
 
   async function handleGoogleSignIn() {
-    if (isLoading) return
-
+    if (isLoadingSocial) return
     try {
-      setIsLoading(true)
+      setIsLoadingSocial(true)
       await GoogleSignin.hasPlayServices()
-
-      // Force Account Picker
       try {
         await GoogleSignin.signOut()
       } catch {}
-
       const response = await GoogleSignin.signIn()
       const idToken = response.data?.idToken
-
       if (idToken) {
         const { error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
@@ -55,27 +82,26 @@ export default function LoginScreen() {
         throw new Error('No ID token present!')
       }
     } catch (error: any) {
-      console.error('[handleGoogleSignIn] Exception:', error)
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert(t('auth.loginError'), error.message)
       }
     } finally {
-      setIsLoading(false)
+      setIsLoadingSocial(false)
     }
   }
 
-  async function handleAppleSignIn() {
-    if (isLoading) return
+  // ─── Apple ───────────────────────────────────────────────────────────────────
 
+  async function handleAppleSignIn() {
+    if (isLoadingSocial) return
     try {
-      setIsLoading(true)
+      setIsLoadingSocial(true)
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       })
-
       if (credential.identityToken) {
         const { error } = await supabase.auth.signInWithIdToken({
           provider: 'apple',
@@ -84,112 +110,144 @@ export default function LoginScreen() {
         if (error) Alert.alert(t('auth.loginError'), error.message)
       }
     } catch (e: any) {
-      console.error('[handleAppleSignIn] Exception:', e)
       if (e.code !== 'ERR_REQUEST_CANCELED') {
         Alert.alert(t('auth.loginError'), e.message)
       }
     } finally {
-      setIsLoading(false)
+      setIsLoadingSocial(false)
     }
   }
 
-  return (
-    <View className="flex-1 bg-brand-red">
-      <StatusBar style="light" />
+  // ─── Render ──────────────────────────────────────────────────────────────────
 
-      {/* Premium Background Gradient */}
+  return (
+    <View style={styles.root}>
+      <StatusBar style="light" />
       <LinearGradient colors={['#D4001A', '#A80014', '#80000F']} style={styles.gradient} />
 
-      {/* Hero Section */}
-      <View
-        className="items-center justify-center"
-        style={{ height: 340 + insets.top, paddingTop: insets.top }}
+      {/* Hero — compact */}
+      <Animated.View
+        entering={FadeInDown.duration(700).delay(100)}
+        style={[styles.hero, { paddingTop: insets.top + 12 }]}
       >
-        <Animated.View entering={FadeInDown.duration(800).delay(200)}>
-          <LottieView
-            source={require('../../assets/lottie/piggy-intro.json')}
-            autoPlay
-            loop
-            style={styles.heroLottie}
-          />
-        </Animated.View>
-        <Animated.View entering={FadeInDown.duration(800).delay(400)} className="items-center px-6">
-          <Text className="text-center font-outfit-bold text-4xl tracking-tight text-white">
-            {t('app.name')}
-          </Text>
-          <Text className="mt-1 text-center font-outfit-medium text-lg text-red-100 opacity-80">
-            {t('app.tagline')}
-          </Text>
-        </Animated.View>
-      </View>
+        <LottieView
+          source={require('../../assets/lottie/piggy-intro.json')}
+          autoPlay
+          loop
+          style={styles.heroLottie}
+        />
+        <Text style={styles.heroTitle}>{t('app.name')}</Text>
+        <Text style={styles.heroSubtitle}>{t('app.tagline')}</Text>
+      </Animated.View>
 
-      {/* Form Card */}
+      {/* Card */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        style={styles.flex}
       >
         <Animated.View
-          entering={FadeInUp.duration(800).springify().damping(15)}
-          className="flex-1 rounded-t-[48px] bg-white px-8 pt-12 shadow-2xl"
+          entering={FadeInUp.duration(700).springify().damping(15)}
+          style={styles.card}
         >
-          <View className="flex-1">
-            <View className="mb-12">
-              <Text className="font-outfit-bold text-3xl text-gray-900">
-                {t('auth.signInTitle')}
-              </Text>
-              <Text className="mt-1 font-outfit text-base text-gray-400">
-                {t('auth.signInSubtitle')}
-              </Text>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* ── Email + Password ── */}
+            <View style={styles.section}>
+              <Input
+                label="Email"
+                placeholder={t('auth.emailPlaceholder')}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v)
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }))
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                error={errors.email}
+                returnKeyType="next"
+              />
+              <Input
+                label={t('auth.password')}
+                placeholder={t('auth.passwordPlaceholder')}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v)
+                  if (errors.password) setErrors((e) => ({ ...e, password: undefined }))
+                }}
+                secureTextEntry
+                autoComplete="password"
+                error={errors.password}
+                onSubmitEditing={handleEmailLogin}
+                returnKeyType="done"
+              />
+              <Button
+                label={t('auth.signIn')}
+                onPress={handleEmailLogin}
+                loading={isLoadingEmail}
+                disabled={!email.trim() || !password}
+              />
+
+              {/* Register link */}
+              <View style={styles.registerRow}>
+                <Text style={styles.registerText}>{t('auth.noAccount')} </Text>
+                <Pressable onPress={() => router.push('/(auth)/email-register')} hitSlop={8}>
+                  <Text style={styles.registerLink}>{t('auth.signUp')}</Text>
+                </Pressable>
+              </View>
             </View>
 
-            <View className="gap-5">
-              {/* Google Sign In — Premium Variant */}
-              <Animated.View entering={FadeInUp.duration(600).delay(600)}>
-                <Button
-                  label={t('auth.signInWithGoogle')}
-                  variant="white"
-                  onPress={handleGoogleSignIn}
-                  loading={isLoading}
-                  icon="google"
-                  textClassName="font-outfit-semibold text-gray-800"
-                />
-              </Animated.View>
+            {/* ── Divider ── */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-              {/* Apple Sign In */}
+            {/* ── Social + Phone ── */}
+            <View style={styles.section}>
+              <Button
+                label={t('auth.signInWithGoogle')}
+                variant="white"
+                onPress={handleGoogleSignIn}
+                loading={isLoadingSocial}
+                icon="google"
+                textClassName="font-outfit-semibold text-gray-800"
+              />
+
               {Platform.OS === 'ios' && (
-                <Animated.View entering={FadeInUp.duration(600).delay(750)}>
-                  <AppleAuthentication.AppleAuthenticationButton
-                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                    cornerRadius={16}
-                    style={styles.appleButton}
-                    onPress={handleAppleSignIn}
-                  />
-                </Animated.View>
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={16}
+                  style={styles.appleButton}
+                  onPress={handleAppleSignIn}
+                />
               )}
+
+              <Button
+                label={t('auth.signInWithPhone')}
+                variant="white"
+                onPress={() => router.push('/(auth)/phone-login')}
+                icon="call-outline"
+                textClassName="font-outfit-semibold text-gray-800"
+              />
             </View>
 
-            {/* Separator Decor */}
-            <Animated.View
-              entering={FadeInUp.duration(600).delay(900)}
-              className="mt-12 flex-row items-center justify-center opacity-20"
-            >
-              <View className="h-[0.5px] flex-1 bg-gray-400" />
-              <View className="mx-4 h-1.5 w-1.5 rounded-full bg-gray-400" />
-              <View className="h-[0.5px] flex-1 bg-gray-400" />
-            </Animated.View>
-          </View>
-
-          {/* Footer note */}
-          <SafeAreaView className="mt-auto items-center pb-8">
-            <Text className="text-center font-outfit text-[11px] leading-5 text-gray-400">
-              {t('auth.termsNote')}
-              {'\n'}
-              <Text className="font-outfit-semibold text-gray-600">{t('auth.termsOfService')}</Text>
-              {' & '}
-              <Text className="font-outfit-semibold text-gray-600">{t('auth.privacyPolicy')}</Text>
-            </Text>
-          </SafeAreaView>
+            {/* ── Terms ── */}
+            <SafeAreaView style={styles.footer}>
+              <Text style={styles.footerText}>
+                {t('auth.termsNote')}
+                {'\n'}
+                <Text style={styles.footerLink}>{t('auth.termsOfService')}</Text>
+                {' & '}
+                <Text style={styles.footerLink}>{t('auth.privacyPolicy')}</Text>
+              </Text>
+            </SafeAreaView>
+          </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
     </View>
@@ -197,6 +255,13 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#D4001A',
+  },
+  flex: {
+    flex: 1,
+  },
   gradient: {
     position: 'absolute',
     left: 0,
@@ -204,12 +269,88 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
+  hero: {
+    alignItems: 'center',
+    paddingBottom: 16,
+  },
   heroLottie: {
-    width: 240,
-    height: 240,
+    width: 120,
+    height: 120,
+  },
+  heroTitle: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 26,
+    color: '#FFFFFF',
+    marginTop: 4,
+  },
+  heroSubtitle: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
+  },
+  card: {
+    flex: 1,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 24,
+  },
+  section: {
+    gap: 16,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  registerText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  registerLink: {
+    fontFamily: 'Outfit_700Bold',
+    fontSize: 14,
+    color: '#D4001A',
   },
   appleButton: {
     width: '100%',
     height: 56,
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    fontFamily: 'Outfit_400Regular',
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  footerLink: {
+    fontFamily: 'Outfit_600SemiBold',
+    color: '#6B7280',
   },
 })
