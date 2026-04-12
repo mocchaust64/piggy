@@ -13,7 +13,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { errorResponse, withErrorHandler } from '../_shared/errors.ts'
-import { getGoldPrice, TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
+import { getGoldPrice, getVndExchangeRate, TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
 
 const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
 const CACHE_KEY = 'gold_price_current'
@@ -28,47 +28,80 @@ const handler = async (req: Request): Promise<Response> => {
     { auth: { autoRefreshToken: false, persistSession: false } },
   )
 
-  // 1. Check cache
-  const { data: cached } = await adminClient
+  // 1. Check cache for current price
+  const { data: cachedCurrent } = await adminClient
     .from('price_cache')
     .select('data, cached_at')
     .eq('id', CACHE_KEY)
     .single()
 
-  if (cached) {
-    const ageMs = Date.now() - new Date(cached.cached_at).getTime()
+  let finalData: any = null
+  let fromCache = false
+
+  if (cachedCurrent) {
+    const ageMs = Date.now() - new Date(cachedCurrent.cached_at).getTime()
     if (ageMs < CACHE_TTL_MS) {
-      return jsonResponse({ success: true, data: cached.data, fromCache: true })
+      finalData = cachedCurrent.data
+      fromCache = true
     }
   }
 
-  // 2. Fetch fresh price from GRAIL
-  const grailPrice = await getGoldPrice()
+  if (!finalData) {
+    // 2. Fetch fresh price from GRAIL + Exchange Rate
+    try {
+      const [grailPrice, vndRate] = await Promise.all([getGoldPrice(), getVndExchangeRate()])
 
-  const pricePerTroyOz = parseFloat(grailPrice.price)
-  if (isNaN(pricePerTroyOz) || pricePerTroyOz <= 0) {
-    return errorResponse('GRAIL_ERROR', 'Received invalid price from GRAIL')
+      const pricePerTroyOz = parseFloat(grailPrice.price)
+      if (isNaN(pricePerTroyOz) || pricePerTroyOz <= 0) {
+        throw new Error('Invalid price from GRAIL')
+      }
+
+      const pricePerGramUsd = pricePerTroyOz / TROY_OUNCE_TO_GRAMS
+      const pricePerGramVnd = pricePerGramUsd * vndRate
+
+      finalData = {
+        pricePerGramUsd: parseFloat(pricePerGramUsd.toFixed(4)),
+        pricePerGramVnd: Math.round(pricePerGramVnd),
+        vndRate: vndRate,
+        currency: 'USD',
+        unit: 'gram',
+        fetchedAt: grailPrice.timestamp,
+      }
+
+      // 3. Update cache & history (fire and forget)
+      const now = new Date().toISOString()
+      adminClient
+        .from('price_cache')
+        .upsert({ id: CACHE_KEY, data: finalData, cached_at: now })
+        .then(() => {
+          // Only save to history if it's a fresh fetch
+          return adminClient.from('price_history').insert({
+            price_usd: finalData.pricePerGramUsd,
+            price_vnd: finalData.pricePerGramVnd,
+            recorded_at: now,
+          })
+        })
+        .catch((err) => console.error('[get-gold-price] Save failed:', err.message))
+    } catch (err) {
+      return errorResponse('FETCH_ERROR', err.message)
+    }
   }
 
-  const pricePerGram = pricePerTroyOz / TROY_OUNCE_TO_GRAMS
+  // 4. Always fetch 7-day history for the chart
+  const { data: history } = await adminClient
+    .from('price_history')
+    .select('price_usd, price_vnd, recorded_at')
+    .order('recorded_at', { ascending: true })
+    .limit(50) // Enough for a 7-day sparkline (e.g., daily or 6h intervals)
 
-  const responseData = {
-    pricePerGram: parseFloat(pricePerGram.toFixed(4)),
-    pricePerTroyOz: pricePerTroyOz,
-    currency: grailPrice.currency,
-    unit: 'gram',
-    fetchedAt: grailPrice.timestamp,
-  }
-
-  // 3. Upsert cache (fire and forget — don't block the response)
-  adminClient
-    .from('price_cache')
-    .upsert({ id: CACHE_KEY, data: responseData, cached_at: new Date().toISOString() })
-    .then(({ error }: { error: { message: string } | null }) => {
-      if (error) console.error('[get-gold-price] Cache upsert failed:', error.message)
-    })
-
-  return jsonResponse({ success: true, data: responseData, fromCache: false })
+  return jsonResponse({
+    success: true,
+    data: {
+      ...finalData,
+      history: history || [],
+    },
+    fromCache,
+  })
 }
 
 Deno.serve(withErrorHandler(handler))

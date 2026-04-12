@@ -8,6 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 
 import { usePiggies } from '@/hooks/usePiggies'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { useGoldPrice } from '@/hooks/useGoldPrice'
+import { Sparkline } from '@/components/ui/Sparkline'
 import { SkeletonPiggyCard } from '@/components/ui/Skeleton'
 import type { PiggyWithBalance } from '@/types/database'
 
@@ -99,8 +101,9 @@ function PiggyCard({ piggy, index }: { piggy: PiggyWithBalance; index: number })
 
 function GoldPriceBanner() {
   const { t } = useTranslation()
-  const mockPrice = 98.45
-  const mockChange = 1.23
+  const { formattedPrice, priceChangePercent, historyPoints, isLoading } = useGoldPrice()
+
+  const isPositive = priceChangePercent >= 0
 
   return (
     <LinearGradient
@@ -109,15 +112,30 @@ function GoldPriceBanner() {
       end={{ x: 1, y: 1 }}
       style={styles.priceBanner}
     >
-      <View>
+      <View style={styles.priceLeft}>
         <Text style={styles.priceLabel}>{t('home.goldPrice')}</Text>
         <View style={styles.priceRow}>
-          <Text style={styles.priceValue}>${mockPrice.toFixed(2)}</Text>
+          <Text style={styles.priceValue}>{isLoading ? '---' : formattedPrice}</Text>
           <Text style={styles.priceUnit}>{t('home.perGram')}</Text>
         </View>
+        <View
+          style={[styles.priceChangePill, { backgroundColor: isPositive ? '#D1FAE5' : '#FEE2E2' }]}
+        >
+          <Text style={[styles.priceChangeText, { color: isPositive ? '#065F46' : '#991B1B' }]}>
+            {isPositive ? '▲' : '▼'} {Math.abs(priceChangePercent).toFixed(2)}%
+          </Text>
+        </View>
       </View>
-      <View style={styles.priceChangePill}>
-        <Text style={styles.priceChangeText}>▲ {mockChange}%</Text>
+
+      <View style={styles.priceRight}>
+        {historyPoints.length > 0 && (
+          <Sparkline
+            data={historyPoints}
+            width={120}
+            height={60}
+            color={isPositive ? '#10B981' : '#EF4444'}
+          />
+        )}
       </View>
     </LinearGradient>
   )
@@ -283,21 +301,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFBEB',
     borderRadius: 20,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: '#FDE68A',
+  },
+  priceLeft: {
+    flex: 1,
+  },
+  priceRight: {
+    width: 120,
+    height: 60,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   priceLabel: {
     fontSize: 12,
     color: '#92400E',
     fontFamily: 'Outfit_400Regular',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
+    marginBottom: 8,
   },
   priceValue: {
     fontSize: 24,
@@ -310,15 +338,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit_400Regular',
   },
   priceChangePill: {
-    backgroundColor: '#D1FAE5',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   priceChangeText: {
-    fontSize: 13,
-    fontFamily: 'Outfit_600SemiBold',
-    color: '#065F46',
+    fontSize: 11,
+    fontFamily: 'Outfit_700Bold',
   },
   sectionHeader: {
     marginBottom: 16,

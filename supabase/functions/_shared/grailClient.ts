@@ -7,17 +7,36 @@
  * Ref: https://docs.grail.oro.finance/
  */
 
-const GRAIL_BASE_URL = Deno.env.get('GRAIL_BASE_URL') ?? 'https://oro-tradebook-devnet.up.railway.app'
-const GRAIL_API_KEY  = Deno.env.get('GRAIL_API_KEY')!
+const GRAIL_BASE_URL =
+  Deno.env.get('GRAIL_BASE_URL') ?? 'https://oro-tradebook-devnet.up.railway.app'
+const GRAIL_API_KEY = Deno.env.get('GRAIL_API_KEY')!
 
 /** USDC amount per 1 troy ounce (used for validation reference only) */
 export const TROY_OUNCE_TO_GRAMS = 31.1034768
 
+/**
+ * Fetches the current USD to VND exchange rate.
+ * Uses a free public API with fallback to a conservative rate.
+ */
+export async function getVndExchangeRate(): Promise<number> {
+  try {
+    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) throw new Error('Exchange rate API failed')
+    const data = await res.json()
+    return data.rates.VND ?? 25000 // Fallback to ~25k
+  } catch (err) {
+    console.warn('[GRAIL] Failed to fetch exchange rate, using fallback:', err.message)
+    return 25000
+  }
+}
+
 // ─── Response shape ───────────────────────────────────────────────────────────
 
 export interface GrailCurrentPrice {
-  price: string    // USD per troy ounce
-  unit: string     // 'troy_ounce'
+  price: string // USD per troy ounce
+  unit: string // 'troy_ounce'
   currency: string // 'USD'
   timestamp: string
 }
@@ -37,7 +56,7 @@ export interface GrailBuyEstimate {
 }
 
 export interface GrailPurchaseResult {
-  serializedTx: string  // Base64 — must be signed before submission
+  serializedTx: string // Base64 — must be signed before submission
   transactionId: string
 }
 
@@ -57,7 +76,7 @@ async function grailFetch<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> ?? {}),
+    ...((options.headers as Record<string, string>) ?? {}),
   }
 
   if (requiresAuth) {
@@ -121,16 +140,13 @@ export async function getGoldPrice(): Promise<GrailCurrentPrice> {
  * @param referenceId - Internal user ID (Supabase auth.users.id)
  */
 export async function createGrailUser(referenceId: string): Promise<{ userPda: string }> {
-  const res = await grailFetch<{ userPda: string }>(
-    '/api/users',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        kycHash: referenceId, // Using our internal ID as KYC reference
-        metadata: { referenceId, tags: ['heodat'] },
-      }),
-    },
-  )
+  const res = await grailFetch<{ userPda: string }>('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({
+      kycHash: referenceId, // Using our internal ID as KYC reference
+      metadata: { referenceId, tags: ['heodat'] },
+    }),
+  })
   return res
 }
 
@@ -152,13 +168,10 @@ export async function estimateBuyGold(goldAmountGrams: number): Promise<GrailBuy
   // GRAIL API works in troy ounces
   const goldAmountTroyOz = goldAmountGrams / TROY_OUNCE_TO_GRAMS
 
-  const res = await grailFetch<GrailBuyEstimate>(
-    '/api/trading/estimate-buy',
-    {
-      method: 'POST',
-      body: JSON.stringify({ goldAmount: goldAmountTroyOz }),
-    },
-  )
+  const res = await grailFetch<GrailBuyEstimate>('/api/trading/estimate-buy', {
+    method: 'POST',
+    body: JSON.stringify({ goldAmount: goldAmountTroyOz }),
+  })
 
   return {
     ...res,
@@ -181,17 +194,14 @@ export async function purchaseGold(
 ): Promise<GrailPurchaseResult> {
   const goldAmountTroyOz = goldAmountGrams / TROY_OUNCE_TO_GRAMS
 
-  return grailFetch<GrailPurchaseResult>(
-    '/api/trading/purchases/user',
-    {
-      method: 'POST',
-      body: JSON.stringify({
-        userId: grailUserId,
-        goldAmount: goldAmountTroyOz,
-        maxUsdcAmount,
-        co_sign: false,
-        userAsFeePayer: true,
-      }),
-    },
-  )
+  return grailFetch<GrailPurchaseResult>('/api/trading/purchases/user', {
+    method: 'POST',
+    body: JSON.stringify({
+      userId: grailUserId,
+      goldAmount: goldAmountTroyOz,
+      maxUsdcAmount,
+      co_sign: false,
+      userAsFeePayer: true,
+    }),
+  })
 }
