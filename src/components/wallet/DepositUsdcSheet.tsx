@@ -14,6 +14,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -23,14 +25,11 @@ import {
   View,
   Linking,
 } from 'react-native'
-import Animated, {
+import Reanimated, {
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  FadeIn,
-  FadeOut,
-  SlideInUp,
-  SlideOutDown,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import * as Clipboard from 'expo-clipboard'
@@ -111,7 +110,7 @@ interface DepositUsdcSheetProps {
 
 type Step = 'input' | 'signing' | 'confirmed' | 'success'
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable)
 
 export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcSheetProps) {
   const { t } = useTranslation()
@@ -130,17 +129,33 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
 
   const classes = sheetStyles({ step, disabled: !isValidAmount || isLoading })
 
+  const [slideAnim] = useState(() => new Animated.Value(400))
+
   useEffect(() => {
     if (visible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStep('input')
-      setAmountText('')
-      setSignature('')
-      setErrorMsg('')
-      reset()
-      setTimeout(() => inputRef.current?.focus(), 500)
+      setTimeout(() => {
+        setStep('input')
+        setAmountText('')
+        setSignature('')
+        setErrorMsg('')
+        reset()
+      }, 0)
+
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 160,
+      }).start()
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 220,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start()
     }
-  }, [visible, reset])
+  }, [visible, reset, slideAnim])
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 200 }) }],
@@ -204,7 +219,7 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={isLoading ? undefined : onClose}
       statusBarTranslucent
     >
@@ -213,23 +228,16 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className={classes.overlay()}>
-          <Animated.View
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            className={classes.backdrop()}
-          >
-            <Pressable className="flex-1" onPress={isLoading ? undefined : onClose} />
-          </Animated.View>
+          <Pressable className={classes.backdrop()} onPress={isLoading ? undefined : onClose} />
 
           <Animated.View
-            entering={SlideInUp.springify().damping(20).stiffness(150)}
-            exiting={SlideOutDown.duration(200)}
             className={classes.content()}
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
             <View className={classes.handle()} />
 
             {step === 'success' ? (
-              <Animated.View entering={FadeIn.delay(200)}>
+              <Reanimated.View entering={FadeIn.delay(200)}>
                 <View className={classes.successIcon()}>
                   <Ionicons name="checkmark-circle" size={56} color="#16A34A" />
                 </View>
@@ -283,7 +291,7 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
                 >
                   <Text className={classes.buttonText()}>{t('common.done')}</Text>
                 </AnimatedPressable>
-              </Animated.View>
+              </Reanimated.View>
             ) : (
               <>
                 <View className={classes.headerRow()}>
@@ -317,9 +325,9 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
                 </View>
 
                 {!!errorMsg && (
-                  <Animated.Text entering={FadeIn} className={classes.errorText()}>
+                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
                     {errorMsg}
-                  </Animated.Text>
+                  </Reanimated.Text>
                 )}
 
                 <AnimatedPressable

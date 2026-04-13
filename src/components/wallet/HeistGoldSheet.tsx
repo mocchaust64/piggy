@@ -8,6 +8,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,14 +18,11 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import Animated, {
+import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   FadeIn,
-  FadeOut,
-  SlideInUp,
-  SlideOutDown,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import { useTranslation } from 'react-i18next'
@@ -94,7 +93,7 @@ interface HeistGoldSheetProps {
 
 type Step = 'input' | 'success'
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable)
 
 export function HeistGoldSheet({
   visible,
@@ -120,6 +119,26 @@ export function HeistGoldSheet({
 
   const hasError = !!errorMsg || (!!amount && !isValidAmount)
   const classes = heistStyles({ hasError, disabled: !isValidAmount || isPending })
+
+  const [slideAnim] = useState(() => new Animated.Value(400))
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 160,
+      }).start()
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 220,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [visible, slideAnim])
 
   useEffect(() => {
     // Reset mutations on mount
@@ -185,8 +204,8 @@ export function HeistGoldSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="none"
-      onRequestClose={isPending ? undefined : onClose}
+      animationType="fade"
+      onRequestClose={onClose}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
@@ -194,23 +213,16 @@ export function HeistGoldSheet({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className={classes.overlay()}>
-          <Animated.View
-            entering={FadeIn.duration(300)}
-            exiting={FadeOut.duration(200)}
-            className={classes.backdrop()}
-          >
-            <Pressable className="flex-1" onPress={isPending ? undefined : onClose} />
-          </Animated.View>
+          <Pressable className={classes.backdrop()} onPress={onClose} />
 
           <Animated.View
-            entering={SlideInUp.springify().damping(22).stiffness(120)}
-            exiting={SlideOutDown.duration(250)}
             className={classes.content()}
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
             <View className={classes.handle()} />
 
             {step === 'success' ? (
-              <Animated.View entering={FadeIn.delay(200)}>
+              <Reanimated.View entering={FadeIn.delay(200)}>
                 <View className={classes.successIcon()}>
                   <MaterialCommunityIcons name="incognito" size={56} color="#FFFFFF" />
                 </View>
@@ -247,7 +259,7 @@ export function HeistGoldSheet({
                 >
                   <Text className={classes.buttonText()}>Mission Complete</Text>
                 </AnimatedPressable>
-              </Animated.View>
+              </Reanimated.View>
             ) : (
               <>
                 <Text className={classes.title()}>{t('allocateGold.heistTitle')}</Text>
@@ -289,9 +301,9 @@ export function HeistGoldSheet({
                 </Text>
 
                 {!!errorMsg && (
-                  <Animated.Text entering={FadeIn} className={classes.errorText()}>
+                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
                     {errorMsg}
-                  </Animated.Text>
+                  </Reanimated.Text>
                 )}
 
                 <AnimatedPressable

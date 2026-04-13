@@ -7,6 +7,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,14 +17,11 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import Animated, {
+import Reanimated, {
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  FadeIn,
-  FadeOut,
-  SlideInUp,
-  SlideOutDown,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import { useTranslation } from 'react-i18next'
@@ -89,7 +88,7 @@ interface WithdrawUsdcSheetProps {
 
 type Step = 'input' | 'success'
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable)
 
 export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcSheetProps) {
   const { t } = useTranslation()
@@ -111,13 +110,32 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
   const hasError = !!errorMsg || (!!amount && !isValidAmount)
   const classes = sheetStyles({ hasError, disabled: !isValidAmount || isPending })
 
+  const [slideAnim] = useState(() => new Animated.Value(400))
+
   useEffect(() => {
-    // Reset mutations on mount
-    reset()
-    // Auto-focus amount input
-    const timer = setTimeout(() => inputRef.current?.focus(), 600)
-    return () => clearTimeout(timer)
-  }, [reset])
+    if (visible) {
+      setTimeout(() => {
+        setStep('input')
+        setAmount('')
+        setErrorMsg('')
+        reset()
+      }, 0)
+
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 160,
+      }).start()
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 220,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [visible, reset, slideAnim])
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 200 }) }],
@@ -179,7 +197,7 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={isPending ? undefined : onClose}
       statusBarTranslucent
     >
@@ -188,23 +206,16 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className={classes.overlay()}>
-          <Animated.View
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            className={classes.backdrop()}
-          >
-            <Pressable className="flex-1" onPress={isPending ? undefined : onClose} />
-          </Animated.View>
+          <Pressable className={classes.backdrop()} onPress={isPending ? undefined : onClose} />
 
           <Animated.View
-            entering={SlideInUp.springify().damping(20).stiffness(150)}
-            exiting={SlideOutDown.duration(200)}
             className={classes.content()}
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
             <View className={classes.handle()} />
 
             {step === 'success' ? (
-              <Animated.View entering={FadeIn.delay(200)}>
+              <Reanimated.View entering={FadeIn.delay(200)}>
                 <View className={classes.successIcon()}>
                   <Ionicons name="checkmark-done" size={56} color="#059669" />
                 </View>
@@ -247,7 +258,7 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
                 >
                   <Text className={classes.buttonText()}>{t('common.done')}</Text>
                 </AnimatedPressable>
-              </Animated.View>
+              </Reanimated.View>
             ) : (
               <>
                 <Text className={classes.title()}>{t('walletScreen.withdrawSheetTitle')}</Text>
@@ -299,9 +310,9 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
                 </View>
 
                 {!!errorMsg && (
-                  <Animated.Text entering={FadeIn} className={classes.errorText()}>
+                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
                     {errorMsg}
-                  </Animated.Text>
+                  </Reanimated.Text>
                 )}
 
                 <AnimatedPressable

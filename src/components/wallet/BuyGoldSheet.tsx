@@ -10,6 +10,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,14 +20,11 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+import Reanimated, {
   FadeIn,
-  FadeOut,
-  SlideInUp,
-  SlideOutDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import { useTranslation } from 'react-i18next'
@@ -96,7 +95,7 @@ interface BuyGoldSheetProps {
 
 type Step = 'input' | 'success'
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable)
 
 const SLIPPAGE = 0.01 // 1% buffer
 
@@ -112,7 +111,12 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
   const { challenge } = useBiometrics()
 
   const inputRef = useRef<TextInput>(null)
+  const [slideAnim] = useState(() => new Animated.Value(400))
   const scale = useSharedValue(1)
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 200 }) }],
+  }))
 
   const gramsNum = parseFloat(grams)
   const isValidGrams = !isNaN(gramsNum) && gramsNum >= 0.01
@@ -126,18 +130,28 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
 
   useEffect(() => {
     if (visible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStep('input')
-      setGrams('')
-      setErrorMsg('')
-      reset()
-      setTimeout(() => inputRef.current?.focus(), 500)
-    }
-  }, [visible, reset])
+      setTimeout(() => {
+        setStep('input')
+        setGrams('')
+        setErrorMsg('')
+        reset()
+      }, 0)
 
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 200 }) }],
-  }))
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 160,
+      }).start()
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 400,
+        duration: 220,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [visible, reset, slideAnim])
 
   const handlePressIn = () => {
     if (isValidGrams && !isPending) {
@@ -191,7 +205,7 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       onRequestClose={isPending ? undefined : onClose}
       statusBarTranslucent
     >
@@ -200,23 +214,16 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className={classes.overlay()}>
-          <Animated.View
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            className={classes.backdrop()}
-          >
-            <Pressable className="flex-1" onPress={isPending ? undefined : onClose} />
-          </Animated.View>
+          <Pressable className={classes.backdrop()} onPress={isPending ? undefined : onClose} />
 
           <Animated.View
-            entering={SlideInUp.springify().damping(20).stiffness(150)}
-            exiting={SlideOutDown.duration(200)}
             className={classes.content()}
+            style={{ transform: [{ translateY: slideAnim }] }}
           >
             <View className={classes.handle()} />
 
             {step === 'success' ? (
-              <Animated.View entering={FadeIn.delay(200)}>
+              <Reanimated.View entering={FadeIn.delay(200)}>
                 <View className={classes.successIcon()}>
                   <Ionicons name="checkmark-circle" size={56} color="#16A34A" />
                 </View>
@@ -249,7 +256,7 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
                 >
                   <Text className={classes.buttonText()}>{t('common.done')}</Text>
                 </AnimatedPressable>
-              </Animated.View>
+              </Reanimated.View>
             ) : (
               <>
                 <Text className={classes.title()}>{t('buyGold.title')}</Text>
@@ -297,16 +304,16 @@ export function BuyGoldSheet({ visible, onClose, onSuccess }: BuyGoldSheetProps)
                 </View>
 
                 {isValidGrams && (
-                  <Animated.View entering={FadeIn} className={classes.costRow()}>
+                  <Reanimated.View entering={FadeIn} className={classes.costRow()}>
                     <Text className={classes.costLabel()}>{t('buyGold.estimatedCost')}</Text>
                     <Text className={classes.costValue()}>≈ {estimatedUsdc.toFixed(2)} USDC</Text>
-                  </Animated.View>
+                  </Reanimated.View>
                 )}
 
                 {!!errorMsg && (
-                  <Animated.Text entering={FadeIn} className={classes.errorText()}>
+                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
                     {errorMsg}
-                  </Animated.Text>
+                  </Reanimated.Text>
                 )}
 
                 <AnimatedPressable
