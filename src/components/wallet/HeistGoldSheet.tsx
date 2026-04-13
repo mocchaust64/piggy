@@ -5,13 +5,10 @@
  * Theme: Playful Heist / Thief.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   Text,
@@ -31,15 +28,13 @@ import { tv } from 'tailwind-variants'
 
 import { useWithdrawFromPiggy } from '@/hooks/useWithdrawFromPiggy'
 import { useBiometrics } from '@/hooks/useBiometrics'
+import { BaseBottomSheet } from '../ui/BaseBottomSheet'
 
 // ─── Variants Definition ─────────────────────────────────────────────────────
 
 const heistStyles = tv({
   slots: {
-    overlay: 'flex-1 justify-end',
-    backdrop: 'absolute inset-0 bg-slate-900/60',
-    content: 'bg-white rounded-t-[40px] px-6 pt-3 pb-12 shadow-2xl',
-    handle: 'self-center w-12 h-1.5 rounded-full bg-slate-100 mb-6',
+    content: 'pb-4',
     title: 'text-2xl font-bold text-slate-900 mb-1 text-center',
     subtitle: 'text-sm text-slate-500 mb-8 text-center px-4',
     piggyInfo:
@@ -120,26 +115,6 @@ export function HeistGoldSheet({
   const hasError = !!errorMsg || (!!amount && !isValidAmount)
   const classes = heistStyles({ hasError, disabled: !isValidAmount || isPending })
 
-  const [slideAnim] = useState(() => new Animated.Value(400))
-
-  useEffect(() => {
-    if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 160,
-      }).start()
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 400,
-        duration: 220,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }).start()
-    }
-  }, [visible, slideAnim])
-
   useEffect(() => {
     // Reset mutations on mount
     reset()
@@ -198,144 +173,137 @@ export function HeistGoldSheet({
     )
   }
 
-  if (!visible) return null
+  const handleSheetClose = () => {
+    onClose()
+    setTimeout(() => {
+      setStep('input')
+      setAmount('')
+      setErrorMsg('')
+      reset()
+    }, 300)
+  }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
+    <BaseBottomSheet visible={visible} onClose={handleSheetClose}>
       <KeyboardAvoidingView
-        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <View className={classes.overlay()}>
-          <Pressable className={classes.backdrop()} onPress={onClose} />
+        <View className={classes.content()}>
+          {step === 'success' ? (
+            <Reanimated.View entering={FadeIn.delay(200)}>
+              <View className={classes.successIcon()}>
+                <MaterialCommunityIcons name="incognito" size={56} color="#FFFFFF" />
+              </View>
+              <Text className={classes.successTitle()}>
+                {t('allocateGold.heistSuccess', { amount })}
+              </Text>
+              <Text className={classes.successSubtitle()}>
+                The gold has been moved back to your primary vault.
+              </Text>
 
-          <Animated.View
-            className={classes.content()}
-            style={{ transform: [{ translateY: slideAnim }] }}
-          >
-            <View className={classes.handle()} />
-
-            {step === 'success' ? (
-              <Reanimated.View entering={FadeIn.delay(200)}>
-                <View className={classes.successIcon()}>
-                  <MaterialCommunityIcons name="incognito" size={56} color="#FFFFFF" />
+              <View className={classes.receiptCard()}>
+                <View className={classes.receiptRow()}>
+                  <Text className={classes.receiptLabel()}>Target</Text>
+                  <Text className={classes.receiptValue()}>Main Wallet</Text>
                 </View>
-                <Text className={classes.successTitle()}>
-                  {t('allocateGold.heistSuccess', { amount })}
-                </Text>
-                <Text className={classes.successSubtitle()}>
-                  The gold has been moved back to your primary vault.
-                </Text>
-
-                <View className={classes.receiptCard()}>
-                  <View className={classes.receiptRow()}>
-                    <Text className={classes.receiptLabel()}>Target</Text>
-                    <Text className={classes.receiptValue()}>Main Wallet</Text>
-                  </View>
-                  <View className={classes.receiptRow()}>
-                    <Text className={classes.receiptLabel()}>Amount</Text>
-                    <Text className={classes.receiptValue()}>{amount}g GOLD</Text>
-                  </View>
-                  <View className={classes.receiptRow()}>
-                    <Text className={classes.receiptLabel()}>Status</Text>
-                    <Text className="text-xs font-bold italic text-slate-900 underline">
-                      BYPASSED SECURITY
-                    </Text>
-                  </View>
+                <View className={classes.receiptRow()}>
+                  <Text className={classes.receiptLabel()}>Amount</Text>
+                  <Text className={classes.receiptValue()}>{amount}g GOLD</Text>
                 </View>
-
-                <AnimatedPressable
-                  className={classes.button()}
-                  style={animatedButtonStyle}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  onPress={onClose}
-                >
-                  <Text className={classes.buttonText()}>Mission Complete</Text>
-                </AnimatedPressable>
-              </Reanimated.View>
-            ) : (
-              <>
-                <Text className={classes.title()}>{t('allocateGold.heistTitle')}</Text>
-                <Text className={classes.subtitle()}>{t('allocateGold.heistSubtitle')}</Text>
-
-                {/* Piggy Info Row */}
-                <View className={classes.piggyInfo()}>
-                  <View className={classes.piggyAvatar()}>
-                    <MaterialCommunityIcons name="piggy-bank" size={28} color="#64748b" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className={classes.piggyName()}>{piggyName}</Text>
-                    <Text className={classes.piggyBalance()}>
-                      Current: {availableGold.toFixed(4)}g
-                    </Text>
-                  </View>
+                <View className={classes.receiptRow()}>
+                  <Text className={classes.receiptLabel()}>Status</Text>
+                  <Text className="text-xs font-bold italic text-slate-900 underline">
+                    BYPASSED SECURITY
+                  </Text>
                 </View>
+              </View>
 
-                {/* Input Section */}
-                <View className={classes.inputWrap()}>
-                  <TextInput
-                    ref={inputRef}
-                    className={classes.input()}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor="#cbd5e1"
-                    value={amount}
-                    onChangeText={(v) => {
-                      setAmount(v)
-                      setErrorMsg('')
-                    }}
-                    maxLength={10}
-                    editable={!isPending}
-                  />
-                  <Text className={classes.inputUnit()}>g GOLD</Text>
+              <AnimatedPressable
+                className={classes.button()}
+                style={animatedButtonStyle}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handleSheetClose}
+              >
+                <Text className={classes.buttonText()}>Mission Complete</Text>
+              </AnimatedPressable>
+            </Reanimated.View>
+          ) : (
+            <>
+              <Text className={classes.title()}>{t('allocateGold.heistTitle')}</Text>
+              <Text className={classes.subtitle()}>{t('allocateGold.heistSubtitle')}</Text>
+
+              {/* Piggy Info Row */}
+              <View className={classes.piggyInfo()}>
+                <View className={classes.piggyAvatar()}>
+                  <MaterialCommunityIcons name="piggy-bank" size={28} color="#64748b" />
                 </View>
-                <Text className={classes.helperText()}>
-                  Minimum: 0.0001g • Max: {availableGold.toFixed(4)}g
-                </Text>
+                <View className="flex-1">
+                  <Text className={classes.piggyName()}>{piggyName}</Text>
+                  <Text className={classes.piggyBalance()}>
+                    Current: {availableGold.toFixed(4)}g
+                  </Text>
+                </View>
+              </View>
 
-                {!!errorMsg && (
-                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
-                    {errorMsg}
-                  </Reanimated.Text>
+              {/* Input Section */}
+              <View className={classes.inputWrap()}>
+                <TextInput
+                  ref={inputRef}
+                  className={classes.input()}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor="#cbd5e1"
+                  value={amount}
+                  onChangeText={(v) => {
+                    setAmount(v)
+                    setErrorMsg('')
+                  }}
+                  maxLength={10}
+                  editable={!isPending}
+                />
+                <Text className={classes.inputUnit()}>g GOLD</Text>
+              </View>
+              <Text className={classes.helperText()}>
+                Minimum: 0.0001g • Max: {availableGold.toFixed(4)}g
+              </Text>
+
+              {!!errorMsg && (
+                <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
+                  {errorMsg}
+                </Reanimated.Text>
+              )}
+
+              <AnimatedPressable
+                className={classes.button()}
+                disabled={!isValidAmount || isPending}
+                style={animatedButtonStyle}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handleConfirm}
+              >
+                {isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <View className="flex-row items-center gap-3">
+                    <MaterialCommunityIcons name="incognito" size={24} color="#FFFFFF" />
+                    <Text className={classes.buttonText()}>{t('allocateGold.heistConfirm')}</Text>
+                  </View>
                 )}
+              </AnimatedPressable>
 
-                <AnimatedPressable
-                  className={classes.button()}
-                  disabled={!isValidAmount || isPending}
-                  style={animatedButtonStyle}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  onPress={handleConfirm}
-                >
-                  {isPending ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <View className="flex-row items-center gap-3">
-                      <MaterialCommunityIcons name="incognito" size={24} color="#FFFFFF" />
-                      <Text className={classes.buttonText()}>{t('allocateGold.heistConfirm')}</Text>
-                    </View>
-                  )}
-                </AnimatedPressable>
-
-                <Pressable
-                  className={classes.cancelButton()}
-                  onPress={onClose}
-                  disabled={isPending}
-                >
-                  <Text className={classes.cancelText()}>{t('common.cancel')}</Text>
-                </Pressable>
-              </>
-            )}
-          </Animated.View>
+              <Pressable
+                className={classes.cancelButton()}
+                onPress={handleSheetClose}
+                disabled={isPending}
+              >
+                <Text className={classes.cancelText()}>{t('common.cancel')}</Text>
+              </Pressable>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </BaseBottomSheet>
   )
 }

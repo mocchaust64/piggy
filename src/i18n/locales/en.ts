@@ -87,7 +87,9 @@ const en = {
     amountPlaceholder: '0.1',
     messagePlaceholder: 'Your personal message...',
     createButton: 'Create gift',
+    sendGiftButton: 'Send Gift 🎁',
     shareButton: 'Share gift',
+    shareCard: 'Create Share Card',
     copyLink: 'Copy link',
     claimTitle: 'You received a gift!',
     claimButton: 'Claim your gift',
@@ -97,6 +99,21 @@ const en = {
     invalidCode: 'Invalid gift code',
     expireIn: 'Expires in',
     days: 'days',
+    recipientLabel: 'Recipient',
+    recipientEmail: 'Email',
+    recipientPhone: 'Phone',
+    recipientWallet: 'Wallet',
+    recipientPlaceholderEmail: 'example@gmail.com',
+    recipientPlaceholderPhone: '0901234567',
+    recipientPlaceholderWallet: 'Solana wallet address',
+    successTitle: 'Gift Sent! 🎉',
+    successSubtitle: 'Share the link so the recipient can claim their gold',
+    insufficientGold: 'Not enough gold. Buy more gold first.',
+    errorInvalidRecipient: 'Please enter a valid recipient',
+    authReason: 'Authenticate to send gold gift',
+    cardSendTo: 'Sent to',
+    cardGiftCode: 'Signature',
+    shareError: 'Failed to create share card. Please try again.',
   },
 
   giftTemplate: {
@@ -141,10 +158,13 @@ const en = {
     giftSent: 'Gift sent',
     giftReceived: 'Gift received',
     allocateToPiggy: 'Added to piggy',
+    depositUsdc: 'Deposit USDC',
+    withdrawUsdc: 'Withdraw USDC',
     empty: 'No transactions yet',
     pending: 'Processing',
     completed: 'Completed',
     failed: 'Failed',
+    status: 'Status',
   },
 
   common: {
@@ -158,6 +178,7 @@ const en = {
     done: 'Done',
     back: 'Back',
     gram: 'g',
+    goldUnit: 'g gold',
     usdc: 'USDC',
   },
 
@@ -245,6 +266,7 @@ const en = {
     errorMinAmount: 'Minimum is 0.0001g',
     errorInsufficientGold: 'Not enough gold in wallet. Buy more gold first.',
     addAll: 'Add all',
+    confirm: 'Confirm',
   },
 
   walletScreen: {

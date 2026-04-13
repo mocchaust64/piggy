@@ -25,20 +25,36 @@ const txItemVariants = tv({
   variants: {
     type: {
       buy_gold: {
-        iconWrap: 'bg-red-50',
-        amount: 'text-red-600',
-      },
-      gift_sent: {
-        iconWrap: 'bg-red-50',
-        amount: 'text-red-600',
+        iconWrap: 'bg-emerald-50',
+        amount: 'text-emerald-600',
       },
       gift_received: {
         iconWrap: 'bg-emerald-50',
         amount: 'text-emerald-600',
       },
+      withdraw_from_piggy: {
+        iconWrap: 'bg-emerald-50',
+        amount: 'text-emerald-600',
+      },
+      deposit_usdc: {
+        iconWrap: 'bg-blue-50',
+        amount: 'text-blue-600',
+      },
+      gift_sent: {
+        iconWrap: 'bg-red-50',
+        amount: 'text-red-600',
+      },
+      allocate_to_piggy: {
+        iconWrap: 'bg-red-50',
+        amount: 'text-red-600',
+      },
+      withdraw_usdc: {
+        iconWrap: 'bg-orange-50',
+        amount: 'text-orange-600',
+      },
       default: {
         iconWrap: 'bg-gray-50',
-        amount: 'text-red-600',
+        amount: 'text-gray-600',
       },
     },
     status: {
@@ -67,16 +83,26 @@ function TxItem({ tx, index }: { tx: Transaction; index: number }) {
     buy_gold: '🪙',
     gift_sent: '🎁',
     gift_received: '🎀',
+    allocate_to_piggy: '🐷',
+    withdraw_from_piggy: '🥷',
+    deposit_usdc: '💵',
+    withdraw_usdc: '🏦',
   }
   const labelMap: Record<string, string> = {
     buy_gold: t('transaction.buyGold'),
     gift_sent: t('transaction.giftSent'),
     gift_received: t('transaction.giftReceived'),
+    allocate_to_piggy: t('transaction.allocateToPiggy'),
+    withdraw_from_piggy: t('allocateGold.heistTitle'),
+    deposit_usdc: t('transaction.depositUsdc'),
+    withdraw_usdc: t('transaction.withdrawUsdc'),
   }
 
   const icon = iconMap[tx.type] ?? '💰'
   const label = labelMap[tx.type] ?? tx.type
-  const isIncoming = tx.type === 'gift_received'
+  const isIncoming = ['buy_gold', 'gift_received', 'withdraw_from_piggy', 'deposit_usdc'].includes(
+    tx.type,
+  )
   const amountSign = isIncoming ? '+' : '-'
 
   const date = new Date(tx.created_at).toLocaleDateString('vi-VN', {
@@ -126,7 +152,9 @@ function TxItem({ tx, index }: { tx: Transaction; index: number }) {
         <View className={right()}>
           <Text className={amount()}>
             {amountSign}
-            {tx.amount.toFixed(4)}g
+            {['deposit_usdc', 'withdraw_usdc'].includes(tx.type)
+              ? `${tx.amount.toFixed(2)} USDC`
+              : `${tx.amount.toFixed(4)}g`}
           </Text>
           <View className={badge()}>
             <Text className={statusText()}>

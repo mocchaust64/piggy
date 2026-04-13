@@ -11,19 +11,16 @@
  * Senior Standards: NativeWind v4, Reanimated 4, tailwind-variants.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
-  Modal,
+  Linking,
   Platform,
   Pressable,
   Text,
   TextInput,
   View,
-  Linking,
 } from 'react-native'
 import Reanimated, {
   FadeIn,
@@ -39,15 +36,13 @@ import { tv } from 'tailwind-variants'
 
 import { solanaService } from '@/services/solanaService'
 import { useDepositUsdc } from '@/hooks/useDepositUsdc'
+import { BaseBottomSheet } from '../ui/BaseBottomSheet'
 
 // ─── Variants Definition ─────────────────────────────────────────────────────
 
 const sheetStyles = tv({
   slots: {
-    overlay: 'flex-1 justify-end',
-    backdrop: 'absolute inset-0 bg-black/40',
-    content: 'bg-white rounded-t-[32px] px-5 pt-3 pb-10 shadow-2xl',
-    handle: 'self-center w-10 h-1.5 rounded-full bg-gray-200 mb-5',
+    content: 'pb-4',
     headerRow: 'flex-row items-center gap-3 mb-6',
     phantomBadge: 'w-12 h-12 rounded-2xl bg-indigo-50 items-center justify-center',
     phantomEmoji: 'text-2xl',
@@ -86,7 +81,7 @@ const sheetStyles = tv({
         button: 'bg-green-200 shadow-none',
       },
       false: {
-        button: 'bg-brand-red',
+        button: 'bg-red-600',
       },
     },
     withMargin: {
@@ -128,34 +123,6 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
   const isLoading = step === 'signing' || isPending
 
   const classes = sheetStyles({ step, disabled: !isValidAmount || isLoading })
-
-  const [slideAnim] = useState(() => new Animated.Value(400))
-
-  useEffect(() => {
-    if (visible) {
-      setTimeout(() => {
-        setStep('input')
-        setAmountText('')
-        setSignature('')
-        setErrorMsg('')
-        reset()
-      }, 0)
-
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 160,
-      }).start()
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 400,
-        duration: 220,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }).start()
-    }
-  }, [visible, reset, slideAnim])
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, { damping: 15, stiffness: 200 }) }],
@@ -213,157 +180,152 @@ export function DepositUsdcSheet({ visible, onClose, onSuccess }: DepositUsdcShe
     Linking.openURL(url)
   }
 
-  if (!visible) return null
+  const handleSheetClose = () => {
+    if (isLoading) return
+    onClose()
+    setTimeout(() => {
+      setStep('input')
+      setAmountText('')
+      setSignature('')
+      setErrorMsg('')
+      reset()
+    }, 300)
+  }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={isLoading ? undefined : onClose}
-      statusBarTranslucent
-    >
+    <BaseBottomSheet visible={visible} onClose={handleSheetClose}>
       <KeyboardAvoidingView
-        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <View className={classes.overlay()}>
-          <Pressable className={classes.backdrop()} onPress={isLoading ? undefined : onClose} />
+        <View className={classes.content()}>
+          {step === 'success' ? (
+            <Reanimated.View entering={FadeIn.delay(200)}>
+              <View className={classes.successIcon()}>
+                <Ionicons name="checkmark-circle" size={56} color="#16A34A" />
+              </View>
+              <Text className={classes.successTitle()}>
+                {t('walletScreen.depositSuccessTitle')}
+              </Text>
+              <Text className={classes.successSubtitle()}>
+                {t('walletScreen.depositSuccess', { amount: amountText })}
+              </Text>
 
-          <Animated.View
-            className={classes.content()}
-            style={{ transform: [{ translateY: slideAnim }] }}
-          >
-            <View className={classes.handle()} />
-
-            {step === 'success' ? (
-              <Reanimated.View entering={FadeIn.delay(200)}>
-                <View className={classes.successIcon()}>
-                  <Ionicons name="checkmark-circle" size={56} color="#16A34A" />
-                </View>
-                <Text className={classes.successTitle()}>
-                  {t('walletScreen.depositSuccessTitle')}
-                </Text>
-                <Text className={classes.successSubtitle()}>
-                  {t('walletScreen.depositSuccess', { amount: amountText })}
-                </Text>
-
-                <View className={classes.receiptCard()}>
-                  <View className={classes.receiptRow()}>
-                    <Text className={classes.receiptLabel()}>
-                      {t('walletScreen.depositAmountLabel')}
-                    </Text>
-                    <Text className={classes.receiptValue()}>+{amountText} USDC</Text>
-                  </View>
-                  <View className={classes.receiptRow()}>
-                    <Text className={classes.receiptLabel()}>{t('transaction.completed')}</Text>
-                    <Text className="text-xs font-bold text-green-600">SUCCESS</Text>
-                  </View>
-
-                  <Text className={classes.receiptLabel({ withMargin: true })}>
-                    {t('walletScreen.depositSignatureLabel')}
+              <View className={classes.receiptCard()}>
+                <View className={classes.receiptRow()}>
+                  <Text className={classes.receiptLabel()}>
+                    {t('walletScreen.depositAmountLabel')}
                   </Text>
-                  <View className={classes.sigBox()}>
-                    <Text className={classes.sigText()}>{signature}</Text>
-                    <View className={classes.actionRow()}>
-                      <Pressable className={classes.actionButton()} onPress={copyToClipboard}>
-                        <Ionicons name="copy-outline" size={14} color="#4B5563" />
-                        <Text className={classes.actionText()}>
-                          {t('walletScreen.copySignature')}
-                        </Text>
-                      </Pressable>
-                      <Pressable className={classes.actionButton()} onPress={openExplorer}>
-                        <Ionicons name="open-outline" size={14} color="#4B5563" />
-                        <Text className={classes.actionText()}>
-                          {t('walletScreen.viewOnExplorer')}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                  <Text className={classes.receiptValue()}>+{amountText} USDC</Text>
+                </View>
+                <View className={classes.receiptRow()}>
+                  <Text className={classes.receiptLabel()}>{t('transaction.completed')}</Text>
+                  <Text className="text-xs font-bold text-green-600">SUCCESS</Text>
                 </View>
 
-                <AnimatedPressable
-                  className={classes.button({ disabled: false })}
-                  style={animatedButtonStyle}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  onPress={onClose}
-                >
-                  <Text className={classes.buttonText()}>{t('common.done')}</Text>
-                </AnimatedPressable>
-              </Reanimated.View>
-            ) : (
-              <>
-                <View className={classes.headerRow()}>
-                  <View className={classes.phantomBadge()}>
-                    <Text className={classes.phantomEmoji()}>👻</Text>
+                <Text className={classes.receiptLabel({ withMargin: true })}>
+                  {t('walletScreen.depositSignatureLabel')}
+                </Text>
+                <View className={classes.sigBox()}>
+                  <Text className={classes.sigText()}>{signature}</Text>
+                  <View className={classes.actionRow()}>
+                    <Pressable className={classes.actionButton()} onPress={copyToClipboard}>
+                      <Ionicons name="copy-outline" size={14} color="#4B5563" />
+                      <Text className={classes.actionText()}>
+                        {t('walletScreen.copySignature')}
+                      </Text>
+                    </Pressable>
+                    <Pressable className={classes.actionButton()} onPress={openExplorer}>
+                      <Ionicons name="open-outline" size={14} color="#4B5563" />
+                      <Text className={classes.actionText()}>
+                        {t('walletScreen.viewOnExplorer')}
+                      </Text>
+                    </Pressable>
                   </View>
-                  <View className="flex-1">
-                    <Text className={classes.title()}>{t('walletScreen.depositSheetTitle')}</Text>
-                    <Text className={classes.subtitle()}>
-                      {t('walletScreen.depositSheetSubtitle')}
+                </View>
+              </View>
+
+              <AnimatedPressable
+                className={classes.button({ disabled: false })}
+                style={animatedButtonStyle}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handleSheetClose}
+              >
+                <Text className={classes.buttonText()}>{t('common.done')}</Text>
+              </AnimatedPressable>
+            </Reanimated.View>
+          ) : (
+            <>
+              <View className={classes.headerRow()}>
+                <View className={classes.phantomBadge()}>
+                  <Text className={classes.phantomEmoji()}>👻</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className={classes.title()}>{t('walletScreen.depositSheetTitle')}</Text>
+                  <Text className={classes.subtitle()}>
+                    {t('walletScreen.depositSheetSubtitle')}
+                  </Text>
+                </View>
+              </View>
+
+              <View className={classes.inputWrap()}>
+                <TextInput
+                  ref={inputRef}
+                  className={classes.input()}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor="#9CA3AF"
+                  value={amountText}
+                  onChangeText={(v) => {
+                    setAmountText(v)
+                    setErrorMsg('')
+                  }}
+                  editable={!isLoading}
+                  maxLength={10}
+                />
+                <Text className={classes.inputUnit()}>USDC</Text>
+              </View>
+
+              {!!errorMsg && (
+                <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
+                  {errorMsg}
+                </Reanimated.Text>
+              )}
+
+              <AnimatedPressable
+                className={classes.button()}
+                disabled={!isValidAmount || isLoading}
+                style={animatedButtonStyle}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={handleConfirm}
+              >
+                {isLoading ? (
+                  <View className="flex-row items-center gap-3">
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text className={classes.buttonText()}>
+                      {step === 'signing'
+                        ? t('walletScreen.depositProcessing')
+                        : t('walletScreen.depositUpdating')}
                     </Text>
                   </View>
-                </View>
-
-                <View className={classes.inputWrap()}>
-                  <TextInput
-                    ref={inputRef}
-                    className={classes.input()}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor="#9CA3AF"
-                    value={amountText}
-                    onChangeText={(v) => {
-                      setAmountText(v)
-                      setErrorMsg('')
-                    }}
-                    editable={!isLoading}
-                    maxLength={10}
-                  />
-                  <Text className={classes.inputUnit()}>USDC</Text>
-                </View>
-
-                {!!errorMsg && (
-                  <Reanimated.Text entering={FadeIn} className={classes.errorText()}>
-                    {errorMsg}
-                  </Reanimated.Text>
+                ) : (
+                  <Text className={classes.buttonText()}>{t('walletScreen.depositConfirm')}</Text>
                 )}
+              </AnimatedPressable>
 
-                <AnimatedPressable
-                  className={classes.button()}
-                  disabled={!isValidAmount || isLoading}
-                  style={animatedButtonStyle}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  onPress={handleConfirm}
-                >
-                  {isLoading ? (
-                    <View className="flex-row items-center gap-3">
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                      <Text className={classes.buttonText()}>
-                        {step === 'signing'
-                          ? t('walletScreen.depositProcessing')
-                          : t('walletScreen.depositUpdating')}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text className={classes.buttonText()}>{t('walletScreen.depositConfirm')}</Text>
-                  )}
-                </AnimatedPressable>
-
-                <Pressable
-                  className={classes.cancelButton()}
-                  onPress={onClose}
-                  disabled={isLoading}
-                >
-                  <Text className={classes.cancelText()}>{t('common.cancel')}</Text>
-                </Pressable>
-              </>
-            )}
-          </Animated.View>
+              <Pressable
+                className={classes.cancelButton()}
+                onPress={handleSheetClose}
+                disabled={isLoading}
+              >
+                <Text className={classes.cancelText()}>{t('common.cancel')}</Text>
+              </Pressable>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </BaseBottomSheet>
   )
 }

@@ -4,13 +4,10 @@
  * No GRAIL call. Pure internal transfer via allocate-gold Edge Function.
  */
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   Text,
@@ -23,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { tv } from 'tailwind-variants'
 import { useAllocateGold } from '@/hooks/useAllocateGold'
 import { useWalletBalance } from '@/hooks/useWalletBalance'
+import { BaseBottomSheet } from '../ui/BaseBottomSheet'
 
 interface AllocateGoldSheetProps {
   visible: boolean
@@ -34,10 +32,7 @@ interface AllocateGoldSheetProps {
 
 const sheetVariants = tv({
   slots: {
-    overlay: 'flex-1 justify-end',
-    backdrop: 'absolute inset-0 bg-black/45',
-    sheet: 'bg-white rounded-t-[28px] px-6 pb-10 pt-3 shadow-2xl',
-    handle: 'mb-5 h-1 w-10 self-center rounded-full bg-gray-200',
+    content: 'pb-4',
     title: 'mb-1 font-outfit-bold text-[22px] text-gray-900',
     subtitle: 'mb-5 font-outfit-regular text-sm text-gray-500',
     balanceCard:
@@ -68,8 +63,6 @@ export function AllocateGoldSheet({
   onSuccess,
 }: AllocateGoldSheetProps) {
   const { t } = useTranslation()
-  const [slideAnim] = useState(() => new Animated.Value(400))
-
   const [grams, setGrams] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -80,32 +73,10 @@ export function AllocateGoldSheet({
   const isValidGrams = !isNaN(gramsNum) && gramsNum >= 0.0001 && gramsNum <= goldBalance
   const hasError = !isValidGrams && !!grams
 
-  const { overlay, backdrop, sheet, handle, title, subtitle, balanceCard, inputWrap, confirmBtn } =
-    sheetVariants({ error: hasError, disabled: !isValidGrams || isPending })
-
-  useEffect(() => {
-    if (visible) {
-      setTimeout(() => {
-        setGrams('')
-        setErrorMsg('')
-        reset()
-      }, 0)
-
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 18,
-        stiffness: 160,
-      }).start()
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 400,
-        duration: 220,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }).start()
-    }
-  }, [visible, reset, slideAnim])
+  const { content, title, subtitle, balanceCard, inputWrap, confirmBtn } = sheetVariants({
+    error: hasError,
+    disabled: !isValidGrams || isPending,
+  })
 
   function handleConfirm() {
     if (!isValidGrams) {
@@ -124,7 +95,7 @@ export function AllocateGoldSheet({
         onSuccess: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
           onSuccess?.()
-          onClose()
+          handleSheetClose()
         },
         onError: (err) => {
           setErrorMsg(err.message ?? t('common.error'))
@@ -133,21 +104,22 @@ export function AllocateGoldSheet({
     )
   }
 
+  const handleSheetClose = () => {
+    onClose()
+    setTimeout(() => {
+      setGrams('')
+      setErrorMsg('')
+      reset()
+    }, 300)
+  }
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
+    <BaseBottomSheet visible={visible} onClose={handleSheetClose}>
       <KeyboardAvoidingView
-        className={overlay()}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
-        <Pressable className={backdrop()} onPress={onClose} />
-        <Animated.View className={sheet()} style={{ transform: [{ translateY: slideAnim }] }}>
-          <View className={handle()} />
+        <View className={content()}>
           <Text className={title()}>{t('allocateGold.title')}</Text>
           <Text className={subtitle()}>{t('allocateGold.subtitle', { name: piggyName })}</Text>
 
@@ -224,16 +196,16 @@ export function AllocateGoldSheet({
 
           <Pressable
             className="items-center py-3 active:opacity-70"
-            onPress={onClose}
+            onPress={handleSheetClose}
             disabled={isPending}
           >
             <Text className="font-outfit-regular text-[15px] text-gray-400">
               {t('common.cancel')}
             </Text>
           </Pressable>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
-    </Modal>
+    </BaseBottomSheet>
   )
 }
 

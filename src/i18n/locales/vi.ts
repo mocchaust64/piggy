@@ -89,7 +89,9 @@ const vi: TranslationKeys = {
     amountPlaceholder: '0.1',
     messagePlaceholder: 'Lời chúc của bạn...',
     createButton: 'Tạo quà tặng',
+    sendGiftButton: 'Gửi quà 🎁',
     shareButton: 'Chia sẻ quà',
+    shareCard: 'Tạo thiệp chia sẻ',
     copyLink: 'Sao chép link',
     claimTitle: 'Bạn nhận được quà!',
     claimButton: 'Nhận quà ngay',
@@ -99,6 +101,21 @@ const vi: TranslationKeys = {
     invalidCode: 'Mã quà tặng không hợp lệ',
     expireIn: 'Hết hạn sau',
     days: 'ngày',
+    recipientLabel: 'Người nhận',
+    recipientEmail: 'Email',
+    recipientPhone: 'Số điện thoại',
+    recipientWallet: 'Địa chỉ ví',
+    recipientPlaceholderEmail: 'example@gmail.com',
+    recipientPlaceholderPhone: '0901234567',
+    recipientPlaceholderWallet: 'Địa chỉ ví Solana',
+    successTitle: 'Đã gửi quà! 🎉',
+    successSubtitle: 'Chia sẻ link để người nhận lấy vàng',
+    insufficientGold: 'Không đủ vàng. Hãy mua thêm vàng trước.',
+    errorInvalidRecipient: 'Vui lòng nhập thông tin người nhận hợp lệ',
+    authReason: 'Xác thực để gửi quà vàng',
+    cardSendTo: 'Gửi tới',
+    cardGiftCode: 'Chữ ký',
+    shareError: 'Không thể tạo thiệp chia sẻ. Vui lòng thử lại sau.',
   },
 
   giftTemplate: {
@@ -146,10 +163,13 @@ const vi: TranslationKeys = {
     giftSent: 'Tặng vàng',
     giftReceived: 'Nhận vàng',
     allocateToPiggy: 'Thêm vào heo',
+    depositUsdc: 'Nạp USDC',
+    withdrawUsdc: 'Rút USDC',
     empty: 'Chưa có giao dịch nào',
     pending: 'Đang xử lý',
     completed: 'Hoàn thành',
     failed: 'Thất bại',
+    status: 'Trạng thái',
   },
 
   common: {
@@ -163,6 +183,7 @@ const vi: TranslationKeys = {
     done: 'Xong',
     back: 'Quay lại',
     gram: 'gram',
+    goldUnit: 'g vàng',
     usdc: 'USDC',
   },
 
@@ -250,6 +271,7 @@ const vi: TranslationKeys = {
     errorMinAmount: 'Tối thiểu 0.0001g',
     errorInsufficientGold: 'Ví không đủ vàng. Hãy mua thêm vàng trước.',
     addAll: 'Thêm tất cả',
+    confirm: 'Xác nhận thêm',
   },
 
   walletScreen: {

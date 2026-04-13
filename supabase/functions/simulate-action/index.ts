@@ -62,6 +62,15 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse('DATABASE_ERROR', `Deposit failed: ${updateError.message}`)
     }
 
+    // Log the transaction so it appears in history
+    await adminClient.from('transactions').insert({
+      user_id: userId,
+      type: 'deposit_usdc',
+      amount: depositAmount,
+      status: 'completed',
+      metadata: { source: 'phantom_signature' },
+    })
+
     return jsonResponse({
       success: true,
       data: { message: `Successfully deposited ${depositAmount} USDC`, newBalance },

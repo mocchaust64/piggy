@@ -99,7 +99,7 @@ export default function ClaimGiftScreen() {
         >
           <Text style={styles.giftAmount}>
             {mockGift.amount.toFixed(4)}
-            <Text style={styles.giftAmountUnit}> g vàng</Text>
+            <Text style={styles.giftAmountUnit}> {t('common.goldUnit')}</Text>
           </Text>
           <View style={styles.divider} />
           <Text style={styles.giftMessage}>"{mockGift.message}"</Text>

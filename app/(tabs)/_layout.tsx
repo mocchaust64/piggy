@@ -49,15 +49,15 @@ export default function TabsLayout() {
         options={{
           title: t('piggy.balance'),
           tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🐷" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="wallet"
+        name="piggies"
         options={{
-          title: t('walletScreen.title'),
-          tabBarLabel: t('walletScreen.title'),
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👛" focused={focused} />,
+          title: t('home.myPiggies'),
+          tabBarLabel: t('home.myPiggies'),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🐷" focused={focused} />,
         }}
       />
       <Tabs.Screen
