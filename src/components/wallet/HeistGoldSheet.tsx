@@ -22,7 +22,7 @@ import Animated, {
   withSpring,
   FadeIn,
   FadeOut,
-  SlideInDown,
+  SlideInUp,
   SlideOutDown,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
@@ -203,7 +203,7 @@ export function HeistGoldSheet({
           </Animated.View>
 
           <Animated.View
-            entering={SlideInDown.springify().damping(22).stiffness(120)}
+            entering={SlideInUp.springify().damping(22).stiffness(120)}
             exiting={SlideOutDown.duration(250)}
             className={classes.content()}
           >

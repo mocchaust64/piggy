@@ -21,7 +21,7 @@ import Animated, {
   withSpring,
   FadeIn,
   FadeOut,
-  SlideInDown,
+  SlideInUp,
   SlideOutDown,
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
@@ -197,7 +197,7 @@ export function WithdrawUsdcSheet({ visible, onClose, onSuccess }: WithdrawUsdcS
           </Animated.View>
 
           <Animated.View
-            entering={SlideInDown.springify().damping(20).stiffness(150)}
+            entering={SlideInUp.springify().damping(20).stiffness(150)}
             exiting={SlideOutDown.duration(200)}
             className={classes.content()}
           >
