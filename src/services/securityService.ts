@@ -18,16 +18,20 @@ class SecurityService {
    * Challenge the user with a biometric prompt (FaceID/TouchID/Passcode).
    * returns true if authentication was successful.
    */
-  async authenticate(reason: string = 'Xác thực để tiếp tục'): Promise<boolean> {
+  async authenticate(
+    reason: string = 'Authenticate to continue',
+    fallbackLabel: string = 'Use Passcode',
+    cancelLabel: string = 'Cancel',
+  ): Promise<boolean> {
     try {
       const supported = await this.isBiometricsSupported()
       if (!supported) return true // Fallback for unsupported devices in MVP
 
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: reason,
-        fallbackLabel: 'Sử dụng mật khẩu',
+        fallbackLabel,
         disableDeviceFallback: false,
-        cancelLabel: 'Hủy',
+        cancelLabel,
       })
 
       if (result.success) {
@@ -46,11 +50,11 @@ class SecurityService {
   /**
    * Get the type of biometrics supported (FaceID, Fingerprint, etc.)
    */
-  async getBiometryType(): Promise<string> {
+  async getBiometryType(): Promise<'faceid' | 'touchid' | 'passcode'> {
     const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
-    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'FaceID'
-    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return 'Vân tay'
-    return 'Mật khẩu'
+    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'faceid'
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return 'touchid'
+    return 'passcode'
   }
 }
 

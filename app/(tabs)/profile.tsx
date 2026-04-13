@@ -301,8 +301,10 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mt-8 items-center">
-          <Text className="text-xs text-gray-400">Heo Đất Version 1.0.0 (Alpha)</Text>
-          <Text className="mt-1 text-xs text-gray-300">© 2026 Piggy Bank Lab</Text>
+          <Text className="text-xs text-gray-400">
+            {t('profile.version', { version: '1.0.0 (Alpha)' })}
+          </Text>
+          <Text className="mt-1 text-xs text-gray-300">{t('profile.copyright')}</Text>
         </View>
       </ScrollView>
 

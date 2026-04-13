@@ -167,6 +167,22 @@ export async function allocateGold(
 }
 
 /**
+ * Withdraws gold from a specific piggy bank back to the parent wallet (Heist).
+ *
+ * @param piggyId         - Source piggy bank ID
+ * @param goldAmountGrams - Amount of gold to withdraw in grams
+ */
+export async function withdrawFromPiggy(
+  piggyId: string,
+  goldAmountGrams: number,
+): Promise<AllocateGoldData> {
+  const res = await invoke<AllocateGoldResponse>('withdraw-from-piggy', {
+    body: { piggyId, goldAmountGrams },
+  })
+  return res.data
+}
+
+/**
  * Claims a pending gold gift using a one-time claim code.
  *
  * @param claimCode  - The gift claim code (format: 'heo-xxxxxxxxxx')

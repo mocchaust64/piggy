@@ -1,11 +1,13 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { securityService } from '@/services/securityService'
 import { useUserProfile, useUpdateProfile } from './useUserProfile'
+import { securityService } from '@/services/securityService'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Hook to manage biometric settings and authentication.
  */
 export function useBiometrics() {
+  const { t } = useTranslation()
   const { data: profile } = useUserProfile()
   const updateProfile = useUpdateProfile()
 
@@ -30,7 +32,11 @@ export function useBiometrics() {
     mutationFn: async (enable: boolean) => {
       if (enable) {
         // Must authenticate to enable
-        const success = await securityService.authenticate('Xác nhận để bật bảo mật sinh trắc học')
+        const success = await securityService.authenticate(
+          t('profile.biometricsReason'),
+          t('profile.biometricsFallback'),
+          t('profile.biometricsCancel'),
+        )
         if (!success) throw new Error('Authentication failed')
       }
 
@@ -44,12 +50,17 @@ export function useBiometrics() {
    */
   const challenge = async (reason?: string) => {
     if (!profile?.biometrics_enabled) return true
-    return await securityService.authenticate(reason)
+    return await securityService.authenticate(
+      reason || t('common.authenticate'),
+      t('profile.biometricsFallback'),
+      t('profile.biometricsCancel'),
+    )
   }
 
   return {
     isSupported,
-    biometryType,
+    biometryType: t(`profile.${biometryType}`),
+    rawType: biometryType,
     isEnabled: !!profile?.biometrics_enabled,
     toggle: toggleBiometrics.mutate,
     isToggling: toggleBiometrics.isPending,
