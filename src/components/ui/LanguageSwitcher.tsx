@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { TouchableOpacity, Text, View, StyleSheet } from 'react-native'
 import { useTranslation } from 'react-i18next'
 
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n'
@@ -19,7 +19,7 @@ function LanguageOption({ lang, isActive, onPress }: OptionProps) {
   const { flag, native, sub } = LANG_META[lang]
 
   return (
-    <Pressable onPress={onPress} style={styles.option}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.option}>
       <View style={[styles.inner, isActive && styles.innerActive]}>
         <Text style={styles.flag}>{flag}</Text>
         <View style={styles.textWrap}>
@@ -32,7 +32,7 @@ function LanguageOption({ lang, isActive, onPress }: OptionProps) {
           </View>
         )}
       </View>
-    </Pressable>
+    </TouchableOpacity>
   )
 }
 
@@ -59,19 +59,19 @@ export function LanguageSwitcher() {
 
 const styles = StyleSheet.create({
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    color: '#9CA3AF',
     marginBottom: 12,
+    fontFamily: 'Outfit_600SemiBold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: '#9CA3AF',
   },
   container: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    padding: 6,
     gap: 4,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    padding: 6,
   },
   option: {
     flex: 1,
@@ -81,17 +81,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderRadius: 12,
+    backgroundColor: 'transparent',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: 'transparent',
   },
   innerActive: {
     backgroundColor: '#FFFFFF',
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 2,
   },
   flag: {
     fontSize: 22,
@@ -100,32 +100,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   native: {
+    fontFamily: 'Outfit_600SemiBold',
     fontSize: 13,
-    fontWeight: '600',
     color: '#9CA3AF',
   },
   nativeActive: {
     color: '#111827',
   },
   sub: {
+    marginTop: 2,
+    fontFamily: 'Outfit_400Regular',
     fontSize: 11,
     color: '#D1D5DB',
-    marginTop: 1,
   },
   subActive: {
     color: '#6B7280',
   },
   check: {
-    width: 20,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: '#D4001A',
+    width: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: '#DC2626',
   },
   checkMark: {
+    fontFamily: 'Outfit_700Bold',
     fontSize: 11,
-    fontWeight: '700',
     color: '#FFFFFF',
   },
 })

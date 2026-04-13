@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
   FadeInDown,
 } from 'react-native-reanimated'
+import { tv } from 'tailwind-variants'
 
 interface InputProps extends Omit<TextInputProps, 'className'> {
   /** Field label shown above the input */
@@ -21,14 +22,24 @@ interface InputProps extends Omit<TextInputProps, 'className'> {
   className?: string
 }
 
+const inputStyles = tv({
+  slots: {
+    container: 'gap-1.5',
+    inputWrapper: 'flex-row items-center rounded-2xl border bg-gray-50 px-4',
+    labelText: 'text-sm font-semibold text-gray-700',
+    textInput: 'h-14 flex-1 text-base font-medium text-gray-900',
+    errorText: 'text-sm font-medium text-red-500',
+    hintText: 'text-sm text-gray-400',
+    suffixText: 'text-sm font-semibold text-gray-400',
+    secureToggleText: 'text-sm font-semibold text-brand-red',
+  },
+})
+
 const AnimatedView = Animated.createAnimatedComponent(View)
 
 /**
  * Controlled text input with label, error and hint support.
- *
- * @example
- * <Input label="Email" value={email} onChangeText={setEmail} error={errors.email} />
- * <Input label="Amount" suffix="USDC" keyboardType="decimal-pad" ... />
+ * Refactored to NativeWind v4 Modern pattern using tailwind-variants.
  */
 export function Input({
   label,
@@ -47,7 +58,7 @@ export function Input({
     return withTiming(error ? 1 : isFocused ? 0.5 : 0, { duration: 250 })
   })
 
-  const inputStyle = useAnimatedStyle(() => {
+  const inputAnimatedStyle = useAnimatedStyle(() => {
     const borderColor = interpolateColor(
       transition.value,
       [0, 0.5, 1],
@@ -56,16 +67,24 @@ export function Input({
     return { borderColor }
   })
 
+  const {
+    container,
+    inputWrapper,
+    labelText,
+    textInput,
+    errorText,
+    hintText,
+    suffixText,
+    secureToggleText,
+  } = inputStyles()
+
   const isPassword = secureTextEntry
 
   return (
-    <View className={`gap-1.5 ${className}`}>
-      {label ? <Text className="text-sm font-semibold text-gray-700">{label}</Text> : null}
+    <View className={container({ className })}>
+      {label ? <Text className={labelText()}>{label}</Text> : null}
 
-      <AnimatedView
-        style={inputStyle}
-        className="flex-row items-center rounded-2xl border bg-gray-50 px-4"
-      >
+      <AnimatedView style={inputAnimatedStyle} className={inputWrapper()}>
         <TextInput
           {...textInputProps}
           secureTextEntry={isPassword && !isSecureVisible}
@@ -78,7 +97,7 @@ export function Input({
             textInputProps.onBlur?.(e)
           }}
           placeholderTextColor="#9CA3AF"
-          className="h-14 flex-1 text-base font-medium text-gray-900"
+          className={textInput()}
         />
 
         {isPassword ? (
@@ -87,24 +106,19 @@ export function Input({
             hitSlop={8}
             accessibilityLabel={isSecureVisible ? 'Hide password' : 'Show password'}
           >
-            <Text className="text-sm font-semibold text-brand-red">
-              {isSecureVisible ? 'Hide' : 'Show'}
-            </Text>
+            <Text className={secureToggleText()}>{isSecureVisible ? 'Hide' : 'Show'}</Text>
           </Pressable>
         ) : suffix ? (
-          <Text className="text-sm font-semibold text-gray-400">{suffix}</Text>
+          <Text className={suffixText()}>{suffix}</Text>
         ) : null}
       </AnimatedView>
 
       {error ? (
-        <Animated.Text
-          entering={FadeInDown.duration(300)}
-          className="text-sm font-medium text-red-500"
-        >
+        <Animated.Text entering={FadeInDown.duration(300)} className={errorText()}>
           {error}
         </Animated.Text>
       ) : hint ? (
-        <Text className="text-sm text-gray-400">{hint}</Text>
+        <Text className={hintText()}>{hint}</Text>
       ) : null}
     </View>
   )

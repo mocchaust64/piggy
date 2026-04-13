@@ -1,35 +1,30 @@
 /**
  * Edge Function: buy-gold
  *
- * Executes a gold purchase for a specific piggy bank using the user's
- * GRAIL custodial USDC balance.
+ * [MOCK MODE] — No GRAIL API key required.
+ * Simulates a gold purchase by:
+ * 1. Checking USDC balance in DB
+ * 2. Deducting USDC + crediting gold directly in DB
+ * 3. Logging a completed transaction
  *
- * Flow:
- * 1. Validate JWT + ownership of piggyId
- * 2. Check USDC balance (slippage guard)
- * 3. Call GRAIL purchase endpoint → receive serializedTx
- * 4. NOTE: serializedTx signing with PARTNER_EXECUTIVE_AUTHORITY is required
- *    before the transaction can be submitted to Solana. This step requires
- *    the @solana/web3.js library and the partner private key in env vars.
- *    Currently stubbed pending Oro partner onboarding completion.
- * 5. Atomically update piggy_balances + insert transaction record
+ * When GRAIL API key is available, replace the mock section with
+ * estimateBuyGold() + purchaseGold() calls.
  *
  * - Auth: Required (JWT)
  * - Method: POST
- * - Body: { piggyId: string, goldAmountGrams: number, maxUsdcAmount: number }
- * - Response: { success: true, data: { transactionId, goldAmountGrams, piggyId } }
+ * - Body: { goldAmountGrams: number, maxUsdcAmount: number }
+ * - Response: { success: true, data: { transactionId, goldAmountGrams, newGoldBalance } }
  */
 
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { errorResponse, withErrorHandler } from '../_shared/errors.ts'
 import { requireAuth } from '../_shared/auth.ts'
-import { estimateBuyGold, purchaseGold, TROY_OUNCE_TO_GRAMS } from '../_shared/grailClient.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const MIN_GOLD_GRAMS = 0.01 // 0.01 gram minimum
-const MAX_GOLD_GRAMS = 1000 // 1kg maximum per transaction
+const MIN_GOLD_GRAMS = 0.01
+const MAX_GOLD_GRAMS = 1000
 
 interface BuyGoldBody {
-  piggyId: string
   goldAmountGrams: number
   maxUsdcAmount: number
 }
@@ -47,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
   if (authResult instanceof Response) return authResult
   const { userId, adminClient } = authResult
 
-  // 2. Parse and validate body
+  // 2. Parse và validate body
   let body: BuyGoldBody
   try {
     body = (await req.json()) as BuyGoldBody
@@ -55,11 +50,8 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse('VALIDATION_ERROR', 'Request body must be valid JSON')
   }
 
-  const { piggyId, goldAmountGrams, maxUsdcAmount } = body
+  const { goldAmountGrams, maxUsdcAmount } = body
 
-  if (!piggyId || typeof piggyId !== 'string') {
-    return errorResponse('VALIDATION_ERROR', 'piggyId is required')
-  }
   if (!goldAmountGrams || goldAmountGrams < MIN_GOLD_GRAMS || goldAmountGrams > MAX_GOLD_GRAMS) {
     return errorResponse(
       'VALIDATION_ERROR',
@@ -70,61 +62,55 @@ const handler = async (req: Request): Promise<Response> => {
     return errorResponse('VALIDATION_ERROR', 'maxUsdcAmount must be a positive number')
   }
 
-  // 3. Verify piggy ownership (RLS bypass via service_role, explicit check for clarity)
-  const { data: piggy, error: piggyError } = await adminClient
-    .from('piggies')
-    .select('id, user_id, child_name')
-    .eq('id', piggyId)
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .single()
-
-  if (piggyError || !piggy) {
-    return errorResponse('FORBIDDEN', 'Piggy not found or access denied')
-  }
-
-  // 4. Load user's GRAIL credentials
+  // 3. Load profile
   const { data: profile, error: profileError } = await adminClient
     .from('user_profiles')
-    .select('grail_user_id, grail_usdc_balance')
+    .select('grail_usdc_balance, gold_balance')
     .eq('id', userId)
     .single()
 
-  if (profileError || !profile?.grail_user_id) {
-    return errorResponse(
-      'FORBIDDEN',
-      'GRAIL wallet not yet provisioned. Please open the app and try again.',
-    )
+  if (profileError || !profile) {
+    return errorResponse('DATABASE_ERROR', 'Failed to load user profile')
   }
 
-  // 5. Slippage guard: confirm USDC balance is sufficient
-  const cachedUsdcBalance = profile.grail_usdc_balance ?? 0
-  if (cachedUsdcBalance < maxUsdcAmount) {
+  // 4. Kiểm tra số dư USDC
+  const currentUsdc = profile.grail_usdc_balance ?? 0
+  if (currentUsdc < maxUsdcAmount) {
     return errorResponse('VALIDATION_ERROR', 'Insufficient USDC balance')
   }
 
-  // 6. Get buy estimate for audit trail
-  const estimate = await estimateBuyGold(goldAmountGrams)
-  if (estimate.usdcRequired > maxUsdcAmount) {
-    return errorResponse(
-      'VALIDATION_ERROR',
-      `Price moved. Required ${estimate.usdcRequired} USDC but max is ${maxUsdcAmount}`,
-    )
-  }
+  // 5. Lấy giá vàng từ price_cache để ghi vào audit trail
+  const priceClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+  const { data: priceCache } = await priceClient
+    .from('price_cache')
+    .select('data')
+    .eq('id', 'gold_price_current')
+    .maybeSingle()
 
-  // 7. Insert a pending transaction record BEFORE calling GRAIL
-  //    This ensures we have an audit trail even if something crashes mid-flight.
+  const cachedPrice = priceCache?.data as { pricePerGramUsd?: number } | null
+  const pricePerGram = cachedPrice?.pricePerGramUsd ?? maxUsdcAmount / goldAmountGrams
+
+  // 6. [MOCK] Tính toán simulation — không gọi GRAIL
+  //    Khi có API key: thay bằng estimateBuyGold() + purchaseGold()
+  const usdcToDeduct = parseFloat((pricePerGram * goldAmountGrams).toFixed(6))
+  const mockTxReference = `mock_${Date.now()}_${userId.slice(0, 8)}`
+
+  // 7. Ghi pending transaction
   const { data: pendingTx, error: txInsertError } = await adminClient
     .from('transactions')
     .insert({
       user_id: userId,
-      piggy_id: piggyId,
+      piggy_id: null,
       type: 'buy_gold',
       amount: goldAmountGrams,
-      usdc_amount: estimate.usdcRequired,
-      gold_price_at_time: estimate.pricePerGram,
+      usdc_amount: usdcToDeduct,
+      gold_price_at_time: pricePerGram,
       status: 'pending',
-      metadata: { estimate },
+      metadata: { mock: true, pricePerGram, usdcToDeduct },
     })
     .select('id')
     .single()
@@ -135,64 +121,47 @@ const handler = async (req: Request): Promise<Response> => {
 
   const transactionRecordId = pendingTx.id
 
-  // 8. Call GRAIL purchase endpoint
-  let purchaseResult
-  try {
-    purchaseResult = await purchaseGold(profile.grail_user_id, goldAmountGrams, maxUsdcAmount)
-  } catch (err) {
-    // Mark transaction as failed and surface meaningful error
-    await adminClient
-      .from('transactions')
-      .update({
-        status: 'failed',
-        error_message: err instanceof Error ? err.message : 'GRAIL purchase failed',
-      })
-      .eq('id', transactionRecordId)
-
-    return errorResponse('GRAIL_ERROR', 'Gold purchase failed. Your USDC has not been charged.')
-  }
-
-  // 9. Atomically update piggy_balances + mark transaction completed
-  //    NOTE: In production, we verify the Solana tx signature before crediting balance.
-  //    For MVP, we trust the GRAIL API response (custodial model).
-  const goldAmountTroyOz = goldAmountGrams / TROY_OUNCE_TO_GRAMS
+  // 8. Cập nhật balance atomically
+  const newGoldBalance = parseFloat(((profile.gold_balance ?? 0) + goldAmountGrams).toFixed(6))
+  const newUsdcBalance = parseFloat((currentUsdc - usdcToDeduct).toFixed(6))
 
   const [balanceResult, txUpdateResult] = await Promise.all([
-    adminClient.rpc('increment_piggy_balance', {
-      p_piggy_id: piggyId,
-      p_gold_amount: goldAmountTroyOz, // stored internally in troy oz for GRAIL parity
-    }),
+    adminClient
+      .from('user_profiles')
+      .update({
+        gold_balance: newGoldBalance,
+        grail_usdc_balance: newUsdcBalance,
+      })
+      .eq('id', userId),
     adminClient
       .from('transactions')
       .update({
         status: 'completed',
-        grail_tx_reference: purchaseResult.transactionId,
-        metadata: { estimate, grailResponse: purchaseResult },
+        grail_tx_reference: mockTxReference,
       })
       .eq('id', transactionRecordId),
   ])
 
   if (balanceResult.error) {
-    // Critical: transaction success but balance not updated
-    // Log for manual reconciliation — do NOT return error to avoid double-buy
-    console.error(
-      '[buy-gold] CRITICAL: Balance update failed after successful GRAIL tx',
-      { piggyId, transactionRecordId, grailTxId: purchaseResult.transactionId },
-      balanceResult.error,
-    )
+    console.error('[buy-gold] CRITICAL: balance update failed:', balanceResult.error.message)
+    await adminClient
+      .from('transactions')
+      .update({ status: 'failed', error_message: 'Balance update failed' })
+      .eq('id', transactionRecordId)
+    return errorResponse('DATABASE_ERROR', 'Purchase failed. Please try again.')
   }
 
   if (txUpdateResult.error) {
-    console.error('[buy-gold] Failed to mark transaction completed:', txUpdateResult.error.message)
+    console.error('[buy-gold] Failed to mark tx completed:', txUpdateResult.error.message)
   }
 
   return jsonResponse({
     success: true,
     data: {
       transactionId: transactionRecordId,
-      grailTxId: purchaseResult.transactionId,
+      grailTxId: mockTxReference,
       goldAmountGrams,
-      piggyId,
+      newGoldBalance,
     },
   })
 }

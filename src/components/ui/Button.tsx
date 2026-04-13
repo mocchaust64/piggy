@@ -1,19 +1,58 @@
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActivityIndicator, Text, View, Pressable } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
-import { Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { tv, type VariantProps } from 'tailwind-variants'
 
-/** Visual variants of the Button component */
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'white'
+/**
+ * Modern Variants Definition via tailwind-variants.
+ * This pattern ensures static string selection, avoiding runtime crashes.
+ */
+const button = tv({
+  base: 'h-[58px] flex-row items-center justify-center rounded-2xl px-6 shadow-sm active:opacity-90',
+  variants: {
+    variant: {
+      primary: 'bg-brand-red',
+      secondary: 'bg-piggy-pink',
+      ghost: 'bg-transparent border border-brand-red',
+      danger: 'bg-red-600',
+      white: 'bg-white border border-gray-100',
+    },
+    disabled: {
+      true: 'opacity-60',
+    },
+    loading: {
+      true: 'opacity-80',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+  },
+})
 
-interface ButtonProps {
+const label = tv({
+  base: 'text-base font-bold',
+  variants: {
+    variant: {
+      primary: 'text-white',
+      secondary: 'text-brand-red',
+      ghost: 'text-brand-red',
+      danger: 'text-white',
+      white: 'text-gray-900',
+    },
+  },
+  defaultVariants: {
+    variant: 'primary',
+  },
+})
+
+type ButtonVariants = VariantProps<typeof button>
+
+interface ButtonProps extends ButtonVariants {
   /** Display label */
   label: string
   /** Handler called when the button is pressed */
   onPress: () => void
-  /** Visual style variant */
-  variant?: ButtonVariant
   /** Disables interaction and dims the button */
   disabled?: boolean
   /** Shows a spinner and disables interaction */
@@ -26,29 +65,14 @@ interface ButtonProps {
   icon?: string
 }
 
-const VARIANT_CONTAINER: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-red',
-  secondary: 'bg-piggy-pink',
-  ghost: 'border border-brand-red',
-  danger: 'bg-red-600',
-  white: 'bg-white border border-gray-100',
-}
-
-const VARIANT_LABEL: Record<ButtonVariant, string> = {
-  primary: 'text-white',
-  secondary: 'text-brand-red',
-  ghost: 'text-brand-red',
-  danger: 'text-white',
-  white: 'text-gray-900',
-}
-
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 /**
- * Premium Reusable button component with Spring scale animation and Haptics.
+ * Premium Reusable button component.
+ * Refactored to NativeWind v4 Modern pattern using tailwind-variants.
  */
 export function Button({
-  label,
+  label: labelText,
   onPress,
   variant = 'primary',
   disabled = false,
@@ -59,7 +83,6 @@ export function Button({
 }: ButtonProps) {
   const scale = useSharedValue(1)
   const isInteractive = !disabled && !loading
-  const opacity = isInteractive ? 'opacity-100' : 'opacity-60'
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, { damping: 12, stiffness: 200 }) }],
@@ -84,6 +107,10 @@ export function Button({
     }
   }
 
+  // Generate stable class names via tailwind-variants
+  const containerClasses = button({ variant, disabled, loading, className })
+  const labelClasses = label({ variant, className: textClassName })
+
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -92,7 +119,7 @@ export function Button({
       accessible
       accessibilityRole="button"
       accessibilityState={{ disabled: !isInteractive }}
-      className={`h-[58px] flex-row items-center justify-center rounded-2xl px-6 shadow-sm active:opacity-90 ${VARIANT_CONTAINER[variant]} ${opacity} ${className} `}
+      className={containerClasses}
       style={animatedStyle}
     >
       {loading ? (
@@ -114,9 +141,7 @@ export function Button({
               color={variant === 'primary' || variant === 'danger' ? 'white' : '#D4001A'}
             />
           )}
-          <Text className={`text-base font-bold ${VARIANT_LABEL[variant]} ${textClassName}`}>
-            {label}
-          </Text>
+          <Text className={labelClasses}>{labelText}</Text>
         </View>
       )}
     </AnimatedPressable>

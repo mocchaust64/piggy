@@ -1,10 +1,62 @@
 import { useTranslation } from 'react-i18next'
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { RefreshControl, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { FadeInDown } from 'react-native-reanimated'
-
+import { tv } from 'tailwind-variants'
 import { useTransactions } from '@/hooks/useTransactions'
 import type { Transaction } from '@/types/database'
+
+// ─── Transaction item styles ───────────────────────────────────────────────────
+
+const txItemVariants = tv({
+  slots: {
+    item: 'flex-row items-center border-b border-gray-50 px-[18px] py-3.5',
+    iconWrap: 'h-[46px] w-[46px] items-center justify-center rounded-full',
+    icon: 'text-[22px]',
+    body: 'flex-1 gap-0.5',
+    label: 'font-outfit-semibold text-sm text-gray-900',
+    date: 'font-outfit-regular text-[12px] text-gray-400',
+    usdc: 'font-outfit-regular text-[11px] text-amber-600',
+    right: 'items-end gap-1',
+    amount: 'font-outfit-bold text-[15px]',
+    badge: 'rounded-xl px-2 py-0.5',
+    statusText: 'font-outfit-regular text-[11px]',
+  },
+  variants: {
+    type: {
+      buy_gold: {
+        iconWrap: 'bg-red-50',
+        amount: 'text-red-600',
+      },
+      gift_sent: {
+        iconWrap: 'bg-red-50',
+        amount: 'text-red-600',
+      },
+      gift_received: {
+        iconWrap: 'bg-emerald-50',
+        amount: 'text-emerald-600',
+      },
+      default: {
+        iconWrap: 'bg-gray-50',
+        amount: 'text-red-600',
+      },
+    },
+    status: {
+      completed: {
+        badge: 'bg-gray-100',
+        statusText: 'text-gray-400',
+      },
+      pending: {
+        badge: 'bg-amber-100',
+        statusText: 'text-amber-600',
+      },
+    },
+  },
+  defaultVariants: {
+    type: 'default',
+    status: 'pending',
+  },
+})
 
 // ─── Transaction item ─────────────────────────────────────────────────────────
 
@@ -21,18 +73,11 @@ function TxItem({ tx, index }: { tx: Transaction; index: number }) {
     gift_sent: t('transaction.giftSent'),
     gift_received: t('transaction.giftReceived'),
   }
-  const colorMap: Record<string, string> = {
-    buy_gold: '#D4001A',
-    gift_sent: '#D4001A',
-    gift_received: '#059669',
-  }
 
   const icon = iconMap[tx.type] ?? '💰'
   const label = labelMap[tx.type] ?? tx.type
-  const amountColor = colorMap[tx.type] ?? '#D4001A'
   const isIncoming = tx.type === 'gift_received'
   const amountSign = isIncoming ? '+' : '-'
-  const iconBg = isIncoming ? '#ECFDF5' : '#FFF0F3'
 
   const date = new Date(tx.created_at).toLocaleDateString('vi-VN', {
     day: '2-digit',
@@ -42,42 +87,49 @@ function TxItem({ tx, index }: { tx: Transaction; index: number }) {
     minute: '2-digit',
   })
 
+  const {
+    item,
+    iconWrap,
+    icon: iconClass,
+    body,
+    label: labelClass,
+    date: dateClass,
+    usdc,
+    right,
+    amount,
+    badge,
+    statusText,
+  } = txItemVariants({
+    type: tx.type as any,
+    status: tx.status as any,
+  })
+
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 60)
         .springify()
         .damping(18)}
     >
-      <View style={styles.txItem}>
-        <View style={[styles.txIconWrap, { backgroundColor: iconBg }]}>
-          <Text style={styles.txIcon}>{icon}</Text>
+      <View className={item()}>
+        <View className={iconWrap()}>
+          <Text className={iconClass()}>{icon}</Text>
         </View>
 
-        <View style={styles.txBody}>
-          <Text style={styles.txLabel}>{label}</Text>
-          <Text style={styles.txDate}>{date}</Text>
+        <View className={body()}>
+          <Text className={labelClass()}>{label}</Text>
+          <Text className={dateClass()}>{date}</Text>
           {tx.usdc_amount != null && (
-            <Text style={styles.txUsdc}>≈ {tx.usdc_amount.toFixed(2)} USDC</Text>
+            <Text className={usdc()}>≈ {tx.usdc_amount.toFixed(2)} USDC</Text>
           )}
         </View>
 
-        <View style={styles.txRight}>
-          <Text style={[styles.txAmount, { color: amountColor }]}>
+        <View className={right()}>
+          <Text className={amount()}>
             {amountSign}
             {tx.amount.toFixed(4)}g
           </Text>
-          <View
-            style={[
-              styles.txStatusBadge,
-              tx.status === 'completed' ? styles.txStatusBadgeDone : styles.txStatusBadgePending,
-            ]}
-          >
-            <Text
-              style={[
-                styles.txStatusText,
-                tx.status === 'completed' ? styles.txStatusTextDone : styles.txStatusTextPending,
-              ]}
-            >
+          <View className={badge()}>
+            <Text className={statusText()}>
               {tx.status === 'completed' ? t('transaction.completed') : t('transaction.pending')}
             </Text>
           </View>
@@ -114,34 +166,41 @@ export default function TransactionsScreen() {
   let globalIndex = 0
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
       {/* Header */}
-      <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-        <Text style={styles.headerTitle}>{t('transaction.title')}</Text>
+      <Animated.View entering={FadeInDown.duration(400)} className="px-6 pb-2 pt-3">
+        <Text className="font-outfit-bold text-[22px] text-gray-900">{t('transaction.title')}</Text>
       </Animated.View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerClassName="px-5 pt-2"
+        className="mb-0"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#D4001A" />
         }
       >
         {isLoading ? (
-          <View style={styles.centeredWrap}>
-            <Text style={styles.placeholderText}>{t('common.loading')}</Text>
+          <View className="flex-1 items-center justify-center pt-20">
+            <Text className="font-outfit-regular text-sm text-gray-400">{t('common.loading')}</Text>
           </View>
         ) : groups.length === 0 ? (
-          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.emptyWrap}>
-            <Text style={styles.emptyEmoji}>📋</Text>
-            <Text style={styles.emptyTitle}>{t('transaction.empty')}</Text>
-            <Text style={styles.emptySubtitle}>{t('home.myPiggies')}</Text>
+          <Animated.View
+            entering={FadeInDown.delay(100).springify()}
+            className="items-center gap-2 pt-20"
+          >
+            <Text className="mb-2 text-[64px]">📋</Text>
+            <Text className="font-outfit-bold text-lg text-gray-900">{t('transaction.empty')}</Text>
+            <Text className="font-outfit-regular text-sm text-gray-400">{t('home.myPiggies')}</Text>
           </Animated.View>
         ) : (
           groups.map(({ date, items }) => (
-            <View key={date} style={styles.group}>
-              <Text style={styles.groupDate}>{date}</Text>
-              <View style={styles.groupList}>
+            <View key={date} className="mb-6">
+              <Text className="mb-2.5 ml-1 font-outfit-semibold text-[13px] text-gray-500">
+                {date}
+              </Text>
+              <View className="elevation-2 overflow-hidden rounded-[24px] bg-white shadow-sm">
                 {items.map((tx) => {
                   const idx = globalIndex++
                   return <TxItem key={tx.id} tx={tx} index={idx} />
@@ -155,147 +214,4 @@ export default function TransactionsScreen() {
   )
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontFamily: 'Outfit_700Bold',
-    color: '#111827',
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  centeredWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontFamily: 'Outfit_400Regular',
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    paddingTop: 80,
-    paddingBottom: 32,
-    gap: 8,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: 'Outfit_700Bold',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontFamily: 'Outfit_400Regular',
-    textAlign: 'center',
-  },
-  // Groups
-  group: {
-    marginBottom: 24,
-  },
-  groupDate: {
-    fontSize: 13,
-    fontFamily: 'Outfit_600SemiBold',
-    color: '#6B7280',
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  groupList: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  // Tx item
-  txItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    gap: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
-  },
-  txIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  txIcon: {
-    fontSize: 22,
-  },
-  txBody: {
-    flex: 1,
-    gap: 2,
-  },
-  txLabel: {
-    fontSize: 14,
-    fontFamily: 'Outfit_600SemiBold',
-    color: '#111827',
-  },
-  txDate: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    fontFamily: 'Outfit_400Regular',
-  },
-  txUsdc: {
-    fontSize: 11,
-    color: '#D97706',
-    fontFamily: 'Outfit_400Regular',
-  },
-  txRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  txAmount: {
-    fontSize: 15,
-    fontFamily: 'Outfit_700Bold',
-  },
-  txStatusBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  txStatusBadgeDone: {
-    backgroundColor: '#F3F4F6',
-  },
-  txStatusBadgePending: {
-    backgroundColor: '#FEF3C7',
-  },
-  txStatusText: {
-    fontSize: 11,
-    fontFamily: 'Outfit_400Regular',
-  },
-  txStatusTextDone: {
-    color: '#9CA3AF',
-  },
-  txStatusTextPending: {
-    color: '#D97706',
-  },
-})
+// Removed legacy StyleSheet. Using NativeWind v4 + tailwind-variants.

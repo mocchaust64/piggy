@@ -7,27 +7,37 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated'
+import { tv, type VariantProps } from 'tailwind-variants'
 
 const SHIMMER_DURATION_MS = 900
 
-interface SkeletonProps {
-  /** Width of the skeleton element (NativeWind class or number) */
+const skeleton = tv({
+  base: 'bg-gray-200',
+  variants: {
+    circle: {
+      true: 'rounded-full',
+      false: 'rounded-xl',
+    },
+  },
+  defaultVariants: {
+    circle: false,
+  },
+})
+
+type SkeletonVariants = VariantProps<typeof skeleton>
+
+interface SkeletonProps extends SkeletonVariants {
+  /** Width of the skeleton element (NativeWind class) */
   width?: string
-  /** Height of the skeleton element (NativeWind class or number) */
+  /** Height of the skeleton element (NativeWind class) */
   height?: string
-  /** Make the skeleton a full circle (for avatars) */
-  circle?: boolean
   /** Extra NativeWind className */
   className?: string
 }
 
 /**
  * Shimmer placeholder for loading states.
- * Uses Reanimated opacity pulse — no external dependency.
- *
- * @example
- * <Skeleton width="w-32" height="h-4" />
- * <Skeleton circle className="w-12 h-12" />
+ * uses NativeWind v4 Modern pattern with tailwind-variants.
  */
 export function Skeleton({
   width = 'w-full',
@@ -49,14 +59,9 @@ export function Skeleton({
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
 
-  const shapeClass = circle ? 'rounded-full' : 'rounded-xl'
+  const classes = skeleton({ circle, className: `${width} ${height} ${className}` })
 
-  return (
-    <Animated.View
-      style={animatedStyle}
-      className={`bg-gray-200 ${shapeClass} ${width} ${height} ${className}`}
-    />
-  )
+  return <Animated.View style={animatedStyle} className={classes} />
 }
 
 /**
@@ -66,7 +71,7 @@ export function SkeletonPiggyCard() {
   return (
     <View className="gap-3 rounded-3xl bg-white p-4" style={styles.cardShadow}>
       <View className="flex-row items-center gap-3">
-        <Skeleton circle className="h-14 w-14" />
+        <Skeleton circle className="h-14 w-14" width="" height="" />
         <View className="flex-1 gap-2">
           <Skeleton width="w-2/3" height="h-4" />
           <Skeleton width="w-1/3" height="h-3" />

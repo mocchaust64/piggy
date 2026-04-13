@@ -1,14 +1,21 @@
 import { Tabs } from 'expo-router'
-import { StyleSheet, Text } from 'react-native'
+import { Text } from 'react-native'
 import { useTranslation } from 'react-i18next'
+import { tv } from 'tailwind-variants'
 
-/** Tab icon using emoji — replace with SVG icons in Sprint 6 */
+/** Tab icon styles */
+const tabIconVariants = tv({
+  base: 'font-outfit-regular text-gray-400',
+  variants: {
+    focused: {
+      true: 'text-[26px] text-gray-900 opacity-100',
+      false: 'text-[22px] opacity-50',
+    },
+  },
+})
+
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return (
-    <Text style={[styles.tabIcon, focused ? styles.tabIconFocused : styles.tabIconInactive]}>
-      {emoji}
-    </Text>
-  )
+  return <Text className={tabIconVariants({ focused })}>{emoji}</Text>
 }
 
 /**
@@ -33,7 +40,7 @@ export default function TabsLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '500',
+          fontFamily: 'Outfit_500Medium',
         },
       }}
     >
@@ -43,6 +50,14 @@ export default function TabsLayout() {
           title: t('piggy.balance'),
           tabBarLabel: 'Home',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🐷" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: t('walletScreen.title'),
+          tabBarLabel: t('walletScreen.title'),
+          tabBarIcon: ({ focused }) => <TabIcon emoji="👛" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -65,17 +80,4 @@ export default function TabsLayout() {
   )
 }
 
-const styles = StyleSheet.create({
-  tabIcon: {
-    fontSize: 22,
-    opacity: 0.5,
-  },
-  tabIconFocused: {
-    fontSize: 26,
-    opacity: 1,
-  },
-  tabIconInactive: {
-    fontSize: 22,
-    opacity: 0.5,
-  },
-})
+// Removed legacy StyleSheet. Using NativeWind v4 + tailwind-variants.

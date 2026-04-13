@@ -40,7 +40,18 @@ export interface BuyGoldData {
   transactionId: string
   grailTxId: string
   goldAmountGrams: number
+  newGoldBalance: number
+}
+
+export interface AllocateGoldData {
   piggyId: string
+  goldAmountGrams: number
+  remainingWalletBalance: number
+}
+
+export interface AllocateGoldResponse {
+  success: boolean
+  data: AllocateGoldData
 }
 
 export interface BuyGoldResponse {
@@ -121,19 +132,36 @@ export async function getBalance(): Promise<BalanceData> {
 }
 
 /**
- * Buys gold for a specific piggy bank using USDC.
+ * Buys gold into the parent's wallet using USDC.
+ * Gold lands in user_profiles.gold_balance — not in a piggy directly.
+ * Use allocateGold() afterwards to move gold into a specific piggy.
  *
- * @param piggyId         - Target piggy bank ID
  * @param goldAmountGrams - Amount of gold to buy in grams
  * @param maxUsdcAmount   - Maximum USDC to spend (slippage guard)
  */
 export async function buyGold(
-  piggyId: string,
   goldAmountGrams: number,
   maxUsdcAmount: number,
 ): Promise<BuyGoldData> {
   const res = await invoke<BuyGoldResponse>('buy-gold', {
-    body: { piggyId, goldAmountGrams, maxUsdcAmount },
+    body: { goldAmountGrams, maxUsdcAmount },
+  })
+  return res.data
+}
+
+/**
+ * Allocates gold from the parent's wallet into a specific piggy bank.
+ * No GRAIL call — pure DB transfer. Atomic and race-condition safe.
+ *
+ * @param piggyId         - Target piggy bank ID
+ * @param goldAmountGrams - Amount of gold to allocate in grams
+ */
+export async function allocateGold(
+  piggyId: string,
+  goldAmountGrams: number,
+): Promise<AllocateGoldData> {
+  const res = await invoke<AllocateGoldResponse>('allocate-gold', {
+    body: { piggyId, goldAmountGrams },
   })
   return res.data
 }

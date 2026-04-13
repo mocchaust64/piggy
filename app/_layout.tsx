@@ -1,3 +1,4 @@
+import '../src/lib/polyfills'
 import { useEffect, useState } from 'react'
 import '../global.css'
 import 'react-native-get-random-values'

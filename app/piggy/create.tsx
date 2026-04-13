@@ -7,7 +7,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native'
@@ -15,10 +14,51 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import { Ionicons } from '@expo/vector-icons'
+import { tv } from 'tailwind-variants'
 
 import { useCreatePiggy } from '@/hooks/usePiggies'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+
+const createVariants = tv({
+  slots: {
+    root: 'flex-1 bg-gray-50',
+    header: 'flex-row items-center justify-between bg-gray-50 px-4 pb-3',
+    backBtn: 'h-11 w-11 items-center justify-center',
+    headerTitle: 'font-outfit-bold text-lg text-gray-900',
+    avatarSection: 'items-center py-4',
+    selectedAvatar:
+      'mb-3 h-[100px] w-[100px] items-center justify-center rounded-full border-[3px] border-red-600 bg-red-50 shadow-md elevation-4',
+    selectedAvatarEmoji: 'text-[54px]',
+    avatarHint: 'mb-5 font-outfit-regular text-sm text-gray-400',
+    avatarGrid: 'flex-row flex-wrap justify-center gap-3',
+    avatarOption:
+      'h-14 w-14 items-center justify-center rounded-full border-2 border-gray-100 bg-white shadow-sm elevation-2 active:scale-95',
+    avatarOptionEmoji: 'text-[28px]',
+    divider: 'my-6 h-[1px] bg-gray-100',
+    form: 'gap-5 mb-8',
+    previewCard:
+      'mb-8 rounded-[24px] border-[1.5px] border-pink-200 bg-white p-5 shadow-lg elevation-5',
+    previewTop: 'mb-4 flex-row items-center gap-4',
+    previewAvatar:
+      'h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-pink-200 bg-pink-50',
+    previewAvatarEmoji: 'text-[32px]',
+    previewInfo: 'flex-1',
+    previewName: 'mb-0.5 font-outfit-bold text-xl text-gray-900',
+    previewGoal: 'font-outfit-regular text-sm text-gray-500',
+    previewBalance: 'border-t border-gray-100 pt-3.5',
+    previewBalanceLabel: 'mb-1 font-outfit-regular text-[11px] text-gray-400',
+    previewBalanceValue: 'font-outfit-bold text-2xl text-red-600',
+    previewBalanceUnit: 'font-outfit-regular text-[15px] text-gray-500',
+  },
+  variants: {
+    active: {
+      true: {
+        avatarOption: 'border-red-600 bg-red-50',
+      },
+    },
+  },
+})
 
 // ─── Avatar options ────────────────────────────────────────────────────────────
 
@@ -64,40 +104,69 @@ export default function CreatePiggyScreen() {
     )
   }
 
+  const {
+    root,
+    header,
+    backBtn,
+    headerTitle,
+    avatarSection,
+    selectedAvatar,
+    selectedAvatarEmoji,
+    avatarHint,
+    avatarGrid,
+    avatarOption,
+    avatarOptionEmoji,
+    divider,
+    form,
+    previewCard,
+    previewTop,
+    previewAvatar,
+    previewAvatarEmoji,
+    previewInfo,
+    previewName,
+    previewGoal,
+    previewBalance,
+    previewBalanceLabel,
+    previewBalanceValue,
+    previewBalanceUnit,
+  } = createVariants()
+
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      className={root()}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
       <Animated.View
         entering={FadeInDown.duration(400)}
-        style={[styles.header, { paddingTop: insets.top + 12 }]}
+        className={header()}
+        style={{ paddingTop: insets.top + 12 }}
       >
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+        <Pressable onPress={() => router.back()} className={backBtn()} hitSlop={12}>
           <Ionicons name="chevron-back" size={28} color="#D4001A" />
         </Pressable>
-        <Text style={styles.headerTitle}>{t('createPiggy.title')}</Text>
-        <View style={styles.backBtn} />
+        <Text className={headerTitle()}>{t('createPiggy.title')}</Text>
+        <View className={backBtn()} />
       </Animated.View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerClassName="px-6 pt-2"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
         {/* Avatar section */}
         <Animated.View
           entering={FadeInDown.delay(80).springify().damping(18)}
-          style={styles.avatarSection}
+          className={avatarSection()}
         >
-          <View style={styles.selectedAvatar}>
-            <Text style={styles.selectedAvatarEmoji}>{avatar}</Text>
+          <View className={selectedAvatar()}>
+            <Text className={selectedAvatarEmoji()}>{avatar}</Text>
           </View>
-          <Text style={styles.avatarHint}>{t('createPiggy.chooseAvatar')}</Text>
+          <Text className={avatarHint()}>{t('createPiggy.chooseAvatar')}</Text>
 
           {/* Avatar grid */}
-          <View style={styles.avatarGrid}>
+          <View className={avatarGrid()}>
             {AVATARS.map((emoji) => (
               <Pressable
                 key={emoji}
@@ -105,18 +174,18 @@ export default function CreatePiggyScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
                   setAvatar(emoji)
                 }}
-                style={[styles.avatarOption, avatar === emoji && styles.avatarOptionActive]}
+                className={avatarOption({ active: avatar === emoji })}
               >
-                <Text style={styles.avatarOptionEmoji}>{emoji}</Text>
+                <Text className={avatarOptionEmoji()}>{emoji}</Text>
               </Pressable>
             ))}
           </View>
         </Animated.View>
 
-        <View style={styles.divider} />
+        <View className={divider()} />
 
         {/* Form */}
-        <Animated.View entering={FadeInDown.delay(160).springify().damping(18)} style={styles.form}>
+        <Animated.View entering={FadeInDown.delay(160).springify().damping(18)} className={form()}>
           <Input
             label={t('createPiggy.childName')}
             placeholder={t('createPiggy.childNamePlaceholder')}
@@ -147,25 +216,25 @@ export default function CreatePiggyScreen() {
         {childName.trim().length > 0 && (
           <Animated.View
             entering={FadeInUp.delay(50).springify().damping(20)}
-            style={styles.previewCard}
+            className={previewCard()}
           >
-            <View style={styles.previewTop}>
-              <View style={styles.previewAvatar}>
-                <Text style={styles.previewAvatarEmoji}>{avatar}</Text>
+            <View className={previewTop()}>
+              <View className={previewAvatar()}>
+                <Text className={previewAvatarEmoji()}>{avatar}</Text>
               </View>
-              <View style={styles.previewInfo}>
-                <Text style={styles.previewName}>{childName}</Text>
+              <View className={previewInfo()}>
+                <Text className={previewName()}>{childName}</Text>
                 {targetDescription ? (
-                  <Text style={styles.previewGoal} numberOfLines={1}>
+                  <Text className={previewGoal()} numberOfLines={1}>
                     {targetDescription}
                   </Text>
                 ) : null}
               </View>
             </View>
-            <View style={styles.previewBalance}>
-              <Text style={styles.previewBalanceLabel}>{t('piggyDetail.goldBalance')}</Text>
-              <Text style={styles.previewBalanceValue}>
-                0.0000<Text style={styles.previewBalanceUnit}> g</Text>
+            <View className={previewBalance()}>
+              <Text className={previewBalanceLabel()}>{t('piggyDetail.goldBalance')}</Text>
+              <Text className={previewBalanceValue()}>
+                0.0000<Text className={previewBalanceUnit()}> g</Text>
               </Text>
             </View>
           </Animated.View>
@@ -185,165 +254,4 @@ export default function CreatePiggyScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#F9FAFB',
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Outfit_700Bold',
-    color: '#111827',
-  },
-  scroll: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  selectedAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#FFF0F3',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#D4001A',
-    marginBottom: 12,
-    shadowColor: '#D4001A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  selectedAvatarEmoji: {
-    fontSize: 54,
-  },
-  avatarHint: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    fontFamily: 'Outfit_400Regular',
-    marginBottom: 20,
-  },
-  avatarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  avatarOption: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  avatarOptionActive: {
-    backgroundColor: '#FFF0F3',
-    borderColor: '#D4001A',
-  },
-  avatarOptionEmoji: {
-    fontSize: 28,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginVertical: 24,
-  },
-  form: {
-    gap: 20,
-    marginBottom: 32,
-  },
-  previewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 32,
-    borderWidth: 1.5,
-    borderColor: '#FFB3C6',
-    shadowColor: '#D4001A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  previewTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
-  },
-  previewAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFF0F3',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFB3C6',
-  },
-  previewAvatarEmoji: {
-    fontSize: 32,
-  },
-  previewInfo: {
-    flex: 1,
-  },
-  previewName: {
-    fontSize: 20,
-    fontFamily: 'Outfit_700Bold',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  previewGoal: {
-    fontSize: 14,
-    fontFamily: 'Outfit_400Regular',
-    color: '#6B7280',
-  },
-  previewBalance: {
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 14,
-  },
-  previewBalanceLabel: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    fontFamily: 'Outfit_400Regular',
-    marginBottom: 4,
-  },
-  previewBalanceValue: {
-    fontSize: 24,
-    fontFamily: 'Outfit_700Bold',
-    color: '#D4001A',
-  },
-  previewBalanceUnit: {
-    fontSize: 15,
-    fontFamily: 'Outfit_400Regular',
-    color: '#6B7280',
-  },
-})
+// Removed legacy StyleSheet. Using NativeWind v4 + tailwind-variants.

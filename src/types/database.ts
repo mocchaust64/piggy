@@ -1,30 +1,10 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.5'
   }
   public: {
     Tables: {
@@ -208,6 +188,27 @@ export type Database = {
         }
         Relationships: []
       }
+      price_history: {
+        Row: {
+          id: string
+          price_usd: number
+          price_vnd: number
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          price_usd: number
+          price_vnd: number
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          price_usd?: number
+          price_vnd?: number
+          recorded_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -268,6 +269,7 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          gold_balance: number
           grail_deposit_address: string | null
           grail_usdc_balance: number | null
           grail_user_id: string | null
@@ -275,10 +277,14 @@ export type Database = {
           notification_preferences: Json | null
           notification_token: string | null
           onboarding_completed: boolean | null
+          solana_wallet_address: string | null
+          avatar_url: string | null
+          biometrics_enabled: boolean | null
         }
         Insert: {
           created_at?: string
           display_name?: string | null
+          gold_balance?: number
           grail_deposit_address?: string | null
           grail_usdc_balance?: number | null
           grail_user_id?: string | null
@@ -286,10 +292,14 @@ export type Database = {
           notification_preferences?: Json | null
           notification_token?: string | null
           onboarding_completed?: boolean | null
+          solana_wallet_address?: string | null
+          avatar_url?: string | null
+          biometrics_enabled?: boolean | null
         }
         Update: {
           created_at?: string
           display_name?: string | null
+          gold_balance?: number
           grail_deposit_address?: string | null
           grail_usdc_balance?: number | null
           grail_user_id?: string | null
@@ -297,6 +307,9 @@ export type Database = {
           notification_preferences?: Json | null
           notification_token?: string | null
           onboarding_completed?: boolean | null
+          solana_wallet_address?: string | null
+          avatar_url?: string | null
+          biometrics_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -305,7 +318,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      allocate_gold_to_piggy: {
+        Args: { p_amount: number; p_piggy_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      increment_piggy_balance: {
+        Args: { p_gold_amount: number; p_piggy_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -432,61 +452,25 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
 
-// ─── Convenience row types ─────────────────────────────────────────────────
-// Use these throughout the app instead of Tables<'table_name'>
+// ─── App-level convenience types ─────────────────────────────────────────────
+// These extend the generated Supabase types with joins and app-specific shapes.
 
-export type UserProfile = Tables<'user_profiles'>
-export type Piggy = Tables<'piggies'>
-export type PiggyBalance = Tables<'piggy_balances'>
-export type Gift = Tables<'gifts'>
-export type Transaction = Tables<'transactions'>
-export type GiftClaimAudit = Tables<'gift_claim_audit'>
-export type PriceCache = Tables<'price_cache'>
+export type UserProfile = Database['public']['Tables']['user_profiles']['Row']
+export type Piggy = Database['public']['Tables']['piggies']['Row']
+export type PiggyBalance = Database['public']['Tables']['piggy_balances']['Row']
+export type Gift = Database['public']['Tables']['gifts']['Row']
+export type Transaction = Database['public']['Tables']['transactions']['Row']
+export type PriceCache = Database['public']['Tables']['price_cache']['Row']
 
-// Insert types
-export type UserProfileInsert = TablesInsert<'user_profiles'>
-export type PiggyInsert = TablesInsert<'piggies'>
-export type GiftInsert = TablesInsert<'gifts'>
-export type TransactionInsert = TablesInsert<'transactions'>
-
-// ─── String union types (derived from schema CHECK constraints) ────────────
-
-export type GiftStatus =
-  | 'pending'
-  | 'transfer_in_progress'
-  | 'claimed'
-  | 'failed'
-  | 'expired'
-  | 'cancelled_by_sender'
-
-export type TransactionType = 'buy_gold' | 'gift_sent' | 'gift_received'
-
-export type TransactionStatus = 'pending' | 'completed' | 'failed'
-
-export type GiftTemplateType = 'tet' | 'sinhnhat' | 'cuoihoi' | 'thoinhoi'
-
-export type GiftClaimResult =
-  | 'success'
-  | 'already_claimed'
-  | 'expired'
-  | 'invalid_code'
-  | 'in_progress'
-  | 'rate_limited'
-
-// ─── Joined types (for queries that JOIN tables) ───────────────────────────
-
+/** Piggy with its balance joined (used in piggy list & detail screens) */
 export type PiggyWithBalance = Piggy & {
   piggy_balances: PiggyBalance | null
 }
 
-export type GiftWithPiggy = Gift & {
-  piggies: Pick<Piggy, 'id' | 'child_name' | 'avatar_url'> | null
-}
+/** Template types for gifts */
+export type GiftTemplateType = 'tet' | 'sinhnhat' | 'cuoihoi' | 'thoinhoi'

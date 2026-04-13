@@ -13,6 +13,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Toàn bộ GRAIL API calls nằm trong `supabase/functions/`. Mobile app chỉ gọi `supabase.functions.invoke()`.
 
 **Lý do:**
+
 - GRAIL API key là credential nhạy cảm — không được có trong app bundle (có thể bị extract)
 - Expo/React Native bundle có thể bị decompile → mọi hard-coded secret đều bị lộ
 - Edge Functions chạy server-side, GRAIL_API_KEY ở env vars, không bao giờ đến client
@@ -30,6 +31,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Không bao giờ yêu cầu hoặc lưu trữ private key, seed phrase của user. Chỉ dùng GRAIL custodial system.
 
 **Lý do:**
+
 - Target users là cha mẹ 30–45 tuổi, không có kiến thức crypto
 - Mất private key = mất vàng vĩnh viễn → không chấp nhận được với savings app cho trẻ em
 - Yêu cầu bắt buộc của Oro GRAIL Grant (custodial mode là điều kiện)
@@ -47,6 +49,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Không tích hợp ngân hàng Việt Nam, Momo, ZaloPay, VNPay hay bất kỳ cổng thanh toán fiat nào.
 
 **Lý do:**
+
 - Pháp lý Việt Nam: tích hợp fiat → crypto cần giấy phép VASP, hiện tại chưa có khung pháp lý rõ ràng
 - Rủi ro compliance cao, có thể bị đình chỉ hoạt động
 - MVP tập trung vào GRAIL Grant — Oro muốn thấy GRAIL API được dùng làm core
@@ -64,6 +67,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Dùng Supabase (PostgreSQL + Auth + Edge Functions + Storage + Realtime) thay vì tự build API server.
 
 **Lý do:**
+
 - MVP 4 tuần — không đủ thời gian build và maintain custom backend
 - Supabase cung cấp Auth (Apple Sign In, OTP) sẵn có
 - Edge Functions (Deno) đủ để wrap GRAIL API an toàn
@@ -83,6 +87,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Dùng Expo Router v3 (file-based routing) thay vì React Navigation.
 
 **Lý do:**
+
 - Deep link handling tự động từ file structure — gift claim link `heodat://gift/[code]` map trực tiếp vào `app/gift/[code].tsx`
 - Universal links dễ config hơn
 - Type-safe params với `useLocalSearchParams`
@@ -92,20 +97,25 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 
 ---
 
-## ADR-006: NativeWind thay vì StyleSheet
+## ADR-006: NativeWind v4 với Modern Variants Pattern
 
-**Ngày:** 09/04/2026
-**Trạng thái:** Đã chốt
+**Ngày:** 13/04/2026
+**Trạng thái:** Đã chốt (Nâng cấp từ v2)
 
-**Quyết định:** Dùng NativeWind v4 (Tailwind cho React Native) cho toàn bộ styling. Không dùng `StyleSheet.create()`.
+**Quyết định:** Sử dụng NativeWind v4 làm tiêu chuẩn. Cấm sử dụng template literals động trong `className` (ví dụ: `` `... ${biến}` ``). Mọi logic style động phải qua `tailwind-variants` hoặc `StyleSheet`.
 
 **Lý do:**
-- Consistency với web Tailwind — designer/developer shared vocabulary
-- Nhanh hơn khi prototype UI
-- Dark mode và responsive dễ implement hơn
-- NativeWind v4 dùng CSS variables, performance tốt hơn v2/v3
 
-**Hệ quả:** Mọi component dùng `className` prop. Không có `styles` object.
+- NativeWind v4 có kiến trúc `jsxImportSource` nhanh và hiện đại hơn v2.
+- Tuy nhiên, v4 crash trên Android khi gặp `className` có chứa biến động (Babel phân tích tĩnh thất bại).
+- `tailwind-variants` là industry standard để quản lý UI states phức tạp, giúp code sạch và crash-proof.
+- `styled()` của NativeWind đã bị coi là legacy, Senior ưu tiên dùng component gốc kết hợp `tailwind-variants`.
+
+**Hệ quả:**
+
+- Các component UI lõi (`Button`, `Input`...) phải được refactor sang `tailwind-variants`.
+- Không cộng chuỗi string trong `className`.
+- `StyleSheet.create()` chỉ dùng cho các giá trị Runtime Truly Dynamic (như màu sắc từ API).
 
 ---
 
@@ -117,6 +127,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Gift claim được thực hiện trong Edge Function với atomic SQL UPDATE để tránh double-claim.
 
 **Lý do:**
+
 - Gift link có thể được share nhiều người → race condition nếu không có lock
 - Double-claim = double debit từ GRAIL custodial wallet → mất tiền thật
 - Không thể dùng optimistic lock client-side vì nhiều devices có thể claim cùng lúc
@@ -134,11 +145,13 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** MVP dùng 1 GRAIL custodial account per parent user. Balance của từng piggy được track trong `piggy_balances.gold_amount` (DB internal). GRAIL chỉ thấy tổng balance của parent.
 
 **Lý do:**
+
 - Chưa confirm được GRAIL có hỗ trợ sub-accounts hay không
 - Không muốn block development trong lúc chờ Oro reply
 - Schema đã có `piggy_balances.grail_wallet_id` — nếu Oro support sub-accounts thì migrate sau mà không cần đổi UI hay business logic
 
 **Migration path nếu Oro support sub-accounts:**
+
 1. Tạo sub-account trên GRAIL cho mỗi piggy hiện có
 2. Populate `piggy_balances.grail_wallet_id`
 3. Cập nhật Edge Functions dùng `grail_wallet_id` thay vì `user.grail_user_id`
@@ -156,6 +169,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Dùng `pg_cron` (PostgreSQL extension, Supabase hỗ trợ sẵn) để chạy scheduled jobs thay vì external service (Cron-Job.org, GitHub Actions, Railway).
 
 **Lý do:**
+
 - Supabase Edge Functions không có built-in cron trigger
 - `pg_cron` chạy trực tiếp trong database — không cần external service, không thêm infrastructure
 - Job đơn giản nhất (expire gifts) chỉ là 1 UPDATE SQL — không cần Edge Function
@@ -173,6 +187,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** Cache giá GOLD trong bảng `price_cache` (TTL 10 phút), Edge Function `get-gold-price` trả về cache nếu còn hạn. TanStack Query `staleTime: 10 * 60 * 1000`.
 
 **Lý do:**
+
 - Giá vàng không cần realtime cho savings app — 10 phút là đủ
 - Tránh gọi GRAIL API quá nhiều (rate limiting, cost)
 - Nếu nhiều users mở app cùng lúc → tất cả dùng chung 1 cache, không spam GRAIL
@@ -189,6 +204,7 @@ Claude không được đề xuất thay đổi các quyết định này trừ 
 **Quyết định:** TanStack Query cho mọi Supabase/GRAIL data fetching. Zustand chỉ cho UI state (modal open/close, form state, selected template…).
 
 **Lý do:**
+
 - Phân tách rõ: server state (balance, transactions, gifts) vs UI state
 - TanStack Query xử lý caching, invalidation, background refetch — không cần tự implement
 - Zustand nhẹ, không cần setup phức tạp

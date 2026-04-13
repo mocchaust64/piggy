@@ -24,17 +24,27 @@ export async function requireAuth(req: Request): Promise<
 > {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
+    console.error(
+      '[auth] Missing or invalid Authorization header:',
+      authHeader ? 'Present but invalid' : 'Missing',
+    )
     return errorResponse('UNAUTHORIZED', 'Missing or invalid Authorization header')
   }
 
   const jwt = authHeader.replace('Bearer ', '')
 
   // Use the service role client (bypasses RLS) to verify the JWT
-  const adminClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  )
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('[auth] Missing environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+    return errorResponse('INTERNAL_ERROR', 'Function configuration error')
+  }
+
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   const {
     data: { user },
@@ -42,7 +52,8 @@ export async function requireAuth(req: Request): Promise<
   } = await adminClient.auth.getUser(jwt)
 
   if (error || !user) {
-    return errorResponse('UNAUTHORIZED', 'Invalid or expired token')
+    const errorDetail = error?.message ?? 'User not found'
+    return errorResponse('UNAUTHORIZED', `Xác thực thất bại: ${errorDetail}`)
   }
 
   return { userId: user.id, adminClient }
